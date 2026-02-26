@@ -17,6 +17,8 @@ This file tracks **what we've built** (phase-wise) and **what's upcoming**. Upda
 ## Latest (add new entries at the top)
 
 ### 2026-02-26
+- **Learn (Memory)**: Info banner on Byte's Memory page now uses explicit light/dark colors (amber-50/amber-950, amber-900/amber-100) so text is readable in both themes — no camouflaging when switching color mode.
+- **Roadmap**: SCORM & format import added to "What's upcoming" (upload SCORM 1.2 packages, parse manifest, map to courses; other formats later). Second modality and Document/URL import remain first priorities.
 - **Repo & docs**: ByteOS pushed to GitHub with README, RESEARCH_FOUNDATION, UPDATES, CONTRIBUTING, LICENSE. Creator story and problem/solution framing added; research-backed positioning for adaptive learning + learner memory.
 - **Phase summary**: UPDATES.md created; phase-wise “what we’ve built” and “what’s upcoming” documented for daily commits.
 
@@ -71,11 +73,12 @@ This file tracks **what we've built** (phase-wise) and **what's upcoming**. Upda
 |----------|------|--------|
 | 1 | **Second modality** | Ship one non-text modality end-to-end (e.g. Flashcards from module content or Audio TTS). |
 | 2 | **Document/URL import** | Upload PDF/DOCX or paste URL; extract text; optional RAG for course generation in Studio. |
-| 3 | **Email reminders** | Notify learners (or admins) when assignments are at-risk or overdue. |
-| 4 | **Server-side certificate PDF** | Optional: generate PDF for download (in addition to browser Print). |
-| 5 | **BytePlay / ByteFeed / ByteMind** | Wire game, feed, and mindmap modalities into Learn. |
-| 6 | **White-label & SSO** | Org branding, custom domain, SAML/OIDC (later phase). |
-| 7 | **HRIS integration** | Webhooks for Workday, BambooHR, Rippling (later phase). |
+| 3 | **SCORM & format import** | Upload SCORM 1.2 packages (ZIP), parse manifest and assets, map to ByteOS courses/modules; other formats (xAPI, HTML bundle) as follow-on. |
+| 4 | **Email reminders** | Notify learners (or admins) when assignments are at-risk or overdue. |
+| 5 | **Server-side certificate PDF** | Optional: generate PDF for download (in addition to browser Print). |
+| 6 | **BytePlay / ByteFeed / ByteMind** | Wire game, feed, and mindmap modalities into Learn. |
+| 7 | **White-label & SSO** | Org branding, custom domain, SAML/OIDC (later phase). |
+| 8 | **HRIS integration** | Webhooks for Workday, BambooHR, Rippling (later phase). |
 
 *Detailed roadmap: [docs/STRATEGIC_PATH.md](docs/STRATEGIC_PATH.md) | [docs/ACTION_PLANS.md](docs/ACTION_PLANS.md).*
 

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, BookOpen, Sparkles, LayoutList, CheckCircle2, Loader2 } from 'lucide-react'
+import { ArrowLeft, BookOpen, Sparkles, LayoutList, CheckCircle2, Loader2, Package } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const difficulties = [
@@ -190,6 +190,15 @@ export default function NewCoursePage() {
                 ))}
               </div>
             </button>
+          </div>
+
+          {/* Import SCORM / formats — coming soon */}
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-800/60 border border-slate-700 border-dashed text-slate-500">
+            <Package className="w-5 h-5 shrink-0 text-slate-600" />
+            <div className="text-sm">
+              <span className="font-medium text-slate-400">Import SCORM & other formats</span>
+              <span className="ml-1">— coming soon. Upload SCORM 1.2 packages or HTML bundles and we&apos;ll map them into ByteOS courses.</span>
+            </div>
           </div>
         </div>
       )}

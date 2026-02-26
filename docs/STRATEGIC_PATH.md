@@ -71,6 +71,10 @@ Priorities are chosen to maximise progress toward the four pillars without overb
    - Upload PDF/DOCX or paste URL; extract text; optional RAG for course generation.  
    - *Why fifth*: Big win for “democratize creation” but larger scope; after core flows are solid.
 
+5b. **SCORM & format import (Studio)**  
+   - Upload SCORM 1.2 packages (ZIP); parse imsmanifest.xml and assets; map to ByteOS courses/modules. Other formats (xAPI, HTML bundle) as follow-on.  
+   - *Why after document import*: Enables reuse of existing content from other authoring tools/LMS; SCORM import is non-trivial (ZIP, manifest, asset resolution).
+
 6. **Further modalities and scale**  
    - BytePlay, ByteFeed, ByteMind, then white-label/SSO/HRIS as in ECOSYSTEM Phase 5.  
    - *Why last*: Higher effort and dependency; follow once 1–5 are in place.

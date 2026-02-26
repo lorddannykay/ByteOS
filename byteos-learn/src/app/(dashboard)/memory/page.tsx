@@ -32,12 +32,12 @@ export default async function MemoryPage() {
         </div>
       </div>
 
-      {/* Info banner */}
-      <BentoCard padding="md" className="bg-warning/10 border-warning/30 flex items-start gap-3">
-        <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-        <div className="text-sm text-warning-foreground space-y-1">
+      {/* Info banner — explicit light/dark contrast so text is never camouflaged */}
+      <BentoCard padding="md" className="bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 flex items-start gap-3">
+        <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <div className="text-sm space-y-1 text-amber-900 dark:text-amber-100">
           <p className="font-medium">How this memory works</p>
-          <p className="text-xs leading-relaxed">
+          <p className="text-xs leading-relaxed opacity-95">
             Byte automatically builds a model of you from your questions and interactions.
             You can add context that helps Byte help you better — like your background or learning goals.
             AI-observed data (concepts Byte thinks you understood) is shown separately and cannot be manually inflated.
