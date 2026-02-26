@@ -1,0 +1,105 @@
+# ByteOS — Action Plans (Executable)
+
+This document defines concrete action plans that align with `STRATEGIC_PATH.md`.  
+Each plan has **objectives**, **tasks** (with hints), and **acceptance criteria**.  
+Tasks can be executed by a single agent or split across multiple agents when workstreams are independent.
+
+---
+
+## Action Plan A — Creator Velocity (Studio)
+
+**Objective**: Admins can assign a learning path to learners and set due dates; assignments and due dates are visible.  
+**Strategic pillar**: Outcomes and compliance + Democratize creation.  
+**Apps**: byteos-studio only (Learn consumption in Plan B/C).
+
+### A1. Path assignment UI (Studio)
+- **Task**: Add an “Assign” flow on the path detail page (`byteos-studio/src/app/(dashboard)/paths/[id]/page.tsx` or a new subpage) that:
+  - Lets the admin select one or more learners (from `profiles` in the same org, or from a simple list).
+  - Creates `enrollments` rows with `path_id`, `user_id`, `enrolled_by`, optional `due_date`.
+- **Hint**: Reuse `createAdminClient()` and existing enrollments API pattern; ensure `course_id` is null and `path_id` is set. For learner list, fetch `profiles` joined with `org_members` for the current org.
+- **Acceptance**: Admin can open a path, click “Assign”, pick learners and a due date, submit; enrollments appear in DB and (after Plan B) in Learn.
+
+### A2. Due date on assignment
+- **Task**: In the Assign flow, add an optional date picker for `due_date`; persist to `enrollments.due_date`.
+- **Hint**: Schema already has `enrollments.due_date`; only need to pass it in the insert/update.
+- **Acceptance**: Enrollments created via Assign have correct `due_date` when set.
+
+### A3. List assigned learners on path (Studio)
+- **Task**: On the path detail page, show a section “Assigned learners” listing enrollments for this path (user name, progress %, due date, status).
+- **Hint**: Fetch `enrollments` where `path_id = path.id`, join `profiles` for names.
+- **Acceptance**: Admin sees who is assigned, their progress, and due date.
+
+**Definition of done for Plan A**: Assign path + due date from Studio; see assigned learners and due dates on path detail.
+
+---
+
+## Action Plan B — Learner Polish (Learn)
+
+**Objective**: Learners see certificates as “Print / Save as PDF” and see upcoming deadlines when they have due dates.  
+**Strategic pillar**: Outcomes and compliance + Learner-first.  
+**Apps**: byteos-learn only.
+
+### B1. Certificate Print / Save as PDF (Learn)
+- **Task**: On the public certificate page (`byteos-learn/src/app/cert/[code]/page.tsx`), ensure “Print / Save as PDF” is obvious and reliable (e.g. dedicated button that calls `window.print()`, print-specific CSS so only the certificate card is printed).
+- **Hint**: Use a client component for the button if needed; add `@media print { ... }` to hide nav/actions and show only the cert card.
+- **Acceptance**: User can click one button and get a print dialog (or “Save as PDF” in that dialog) with only the certificate content.
+
+### B2. Upcoming deadlines on dashboard (Learn)
+- **Task**: On the learner dashboard (`byteos-learn/src/app/(dashboard)/page.tsx`), fetch enrollments (course or path) that have `due_date` in the future; show an “Upcoming deadlines” or “Due soon” card with title, due date, and link to course/path.
+- **Hint**: Query `enrollments` where `user_id = currentUser` and `due_date >= today`, order by `due_date` asc; resolve course/path title from `courses` or `learning_paths`.
+- **Acceptance**: When enrollments have due dates, learner sees a clear list/card with next due items and can click through.
+
+**Definition of done for Plan B**: Certificate print/PDF works; dashboard shows upcoming deadlines when present.
+
+---
+
+## Action Plan C — Compliance & Visibility (Studio + Learn)
+
+**Objective**: Studio has a simple compliance view (who is assigned, due when, at-risk/overdue); Learn surfaces “Required” or “Due soon” where relevant.  
+**Strategic pillar**: Outcomes and compliance.  
+**Apps**: byteos-studio (compliance view), byteos-learn (required/due soon badges or section).
+
+### C1. Compliance view (Studio)
+- **Task**: Add a “Compliance” or “Assignments” page under Studio (e.g. `byteos-studio/src/app/(dashboard)/compliance/page.tsx`) that lists path enrollments (and optionally course enrollments) with: learner name, path/course title, due date, status (on track / at risk / overdue), progress %.
+- **Hint**: “Overdue” = `due_date < today` and not completed; “At risk” = due within 7 days and not completed; “On track” = due later or completed. Use `createAdminClient()`, join enrollments + profiles + learning_paths.
+- **Acceptance**: Admin can open Compliance and see a table/filtered list of assignments with due dates and status.
+
+### C2. Required / Due soon on Learn dashboard
+- **Task**: On the Learn dashboard, if the learner has path or course enrollments with `due_date`, show a “Required” or “Due soon” section (or integrate into “Upcoming deadlines” from B2) with clear labels and links.
+- **Hint**: Can merge with B2 “Upcoming deadlines”; distinguish “mandatory path” vs “due date” if useful.
+- **Acceptance**: Learner sees which items are required or due soon and can act on them.
+
+**Definition of done for Plan C**: Compliance view in Studio; Learn dashboard surfaces required/due soon clearly.
+
+---
+
+## Execution Order and Agents
+
+| Plan | Can run in parallel with | Suggested order |
+|------|---------------------------|-----------------|
+| A (Studio) | B | A1 → A2 → A3 (then B) |
+| B (Learn) | A | B1 → B2 (can start after A1 if needed) |
+| C (Studio + Learn) | — | After A and B (depends on assign + due_date) |
+
+**Using multiple agents**:  
+- **Agent 1**: Execute Plan A (Studio: assign path, due date, list assigned learners).  
+- **Agent 2**: Execute Plan B (Learn: certificate print, upcoming deadlines).  
+- **Agent 3**: After A and B, execute Plan C (compliance view + required/due soon on Learn).
+
+Or execute sequentially: A → B → C.
+
+---
+
+## Completion Checklist (Update as Done)
+
+- [x] **A1** Path assignment UI (Studio)
+- [x] **A2** Due date on assignment
+- [x] **A3** List assigned learners on path (Studio)
+- [x] **B1** Certificate Print / Save as PDF (Learn)
+- [x] **B2** Upcoming deadlines on dashboard (Learn)
+- [x] **C1** Compliance view (Studio)
+- [x] **C2** Required / Due soon on Learn dashboard
+
+---
+
+*Last updated: Action plans A–C defined; execution to follow.*

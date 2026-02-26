@@ -1,0 +1,44 @@
+import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from 'next/server'
+
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const admin = createAdminClient()
+
+  const { data: course } = await admin
+    .from('courses')
+    .select('id')
+    .eq('id', params.id)
+    .eq('created_by', user.id)
+    .single()
+
+  if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+
+  const { data: lastModule } = await admin
+    .from('modules')
+    .select('order_index')
+    .eq('course_id', params.id)
+    .order('order_index', { ascending: false })
+    .limit(1)
+    .single()
+
+  const nextIndex = (lastModule?.order_index ?? -1) + 1
+  const body = await request.json()
+
+  const { data, error } = await admin
+    .from('modules')
+    .insert({
+      course_id: params.id,
+      title: body.title ?? 'Untitled Module',
+      content: body.content ?? { type: 'text', body: '' },
+      order_index: nextIndex,
+    })
+    .select()
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data, { status: 201 })
+}

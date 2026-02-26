@@ -1,0 +1,143 @@
+# ByteOS — Cursor Rules
+# The Operating System for Learning | "Learns with you, for you."
+
+## ALWAYS READ ECOSYSTEM.md FIRST
+Before making any changes, read ECOSYSTEM.md and AGENTS.md in the ByteOS root directory.
+These files contain the authoritative architecture, naming conventions, and build decisions.
+
+---
+
+## Project Identity
+- Product name: ByteOS
+- Admin surface: ByteOS Studio (in /byteos-studio)
+- Learner surface: ByteOS Learn (in /byteos-learn)
+- AI engine: ByteOS Intelligence (in /byteos-intelligence)
+- AI Tutor name: "Byte" (never change this name)
+- Mission: "Learns with you, for you."
+
+---
+
+## Tech Stack (Do Not Deviate)
+- Frontend: Next.js 14 (App Router), TypeScript 5, Tailwind CSS 3
+- Database: Supabase (PostgreSQL via Prisma ORM)
+- Auth: Supabase Auth (shared across Studio + Learn)
+- State: Zustand for complex client state
+- Animation: Framer Motion
+- AI providers: Together AI (primary), OpenAI (secondary), Anthropic (tertiary)
+- Backend AI: Python 3.11+ FastAPI
+- Video: Python + FFmpeg + Edge-TTS + Remotion
+
+---
+
+## TypeScript Rules
+- Always use strict TypeScript — no `any` types
+- Define all shared types in the `types/` directory
+- Use Zod for API payload validation
+- Prefer Server Components; only use "use client" when required for interactivity
+- Use `@/` path alias for all project-relative imports
+
+---
+
+## Styling Rules
+- Tailwind CSS only — no inline styles, no external CSS libraries
+- Follow mobile-first responsive design on all learner-facing components
+- Dark mode support must be included for all new components
+- Use CSS variables for brand colors (defined in tailwind.config.ts)
+- ByteOS design tokens: primary brand is deep blue-purple, accent is electric cyan
+
+---
+
+## Database Rules
+- All Supabase queries on the server use the SERVICE ROLE key
+- All Supabase queries on the client use the ANON key
+- Never expose the service role key to the browser
+- Always use Row Level Security (RLS) policies on all tables
+- Every table must have `created_at timestamptz DEFAULT now()`
+- Use `gen_random_uuid()` for all primary keys
+
+---
+
+## API Route Rules
+- API routes live in `app/api/` using Next.js App Router
+- Always validate request bodies with Zod before processing
+- Return consistent JSON: `{ success: boolean, data?: any, error?: string }`
+- All authentication checks at the top of every API route
+- Rate limiting on all public-facing AI endpoints
+
+---
+
+## AI Integration Rules
+- Always wrap AI calls in try/catch with provider fallback chain: Together AI → OpenAI → Anthropic
+- Log all AI interactions to the `ai_interactions` Supabase table
+- Never expose AI API keys to the client
+- Implement exponential backoff on retry (max 3 attempts)
+- Content moderation via Llama Guard before storing any AI-generated content
+
+---
+
+## Event Tracking Rules
+- Every learner interaction MUST write a record to `learning_events`
+- Event types: module_start, module_complete, quiz_attempt, modality_switch,
+  ai_tutor_open, ai_tutor_query, video_play, video_pause, drop_off
+- Include `modality` field on all events (which format was active)
+- Never batch events — write immediately for real-time adaptive engine
+
+---
+
+## Component Architecture Rules
+- Atomic design: atoms → molecules → organisms → templates → pages
+- Co-locate component tests with the component file
+- Extract reusable hooks into `hooks/` directory
+- Never put business logic in UI components — use hooks and lib functions
+
+---
+
+## Code Quality Rules
+- No console.log in committed code (use a logger utility instead)
+- No hardcoded strings — user-facing copy in constants files
+- No hardcoded IDs (org IDs, user IDs, course IDs)
+- No TODO comments without an associated GitHub issue reference
+- All async operations must handle loading, error, and empty states in the UI
+- Accessibility: all interactive elements need aria-labels, keyboard navigation
+
+---
+
+## Comments Policy
+- Only add comments that explain WHY, not WHAT (the code explains what)
+- Explain non-obvious business logic (e.g. why a specific adaptive algorithm threshold was chosen)
+- Never add comments that just narrate the code ("// increment counter", "// return result")
+
+---
+
+## File Organization (byteos-studio and byteos-learn)
+```
+app/
+  (auth)/          — auth pages (login, register, onboarding)
+  (dashboard)/     — main authenticated pages
+  api/             — API routes
+components/
+  ui/              — primitive UI components (Button, Input, Card...)
+  features/        — feature-specific components
+hooks/             — custom React hooks
+lib/
+  supabase/        — Supabase client + server instances
+  ai/              — AI provider clients and utilities
+  utils/           — general utility functions
+types/             — TypeScript type definitions
+constants/         — app constants and copy strings
+```
+
+---
+
+## When Adding a New Feature
+1. Check ECOSYSTEM.md to see if it's planned or conflicts with architecture
+2. Determine: Studio (admin) or Learn (learner)?
+3. Create the Supabase migration if new tables are needed
+4. Add the feature to the appropriate surface
+5. Ensure `learning_events` is written to if learner-facing
+6. Test mobile layout if learner-facing
+7. Update ECOSYSTEM.md Phase checklist if it completes a milestone
+
+---
+
+*ByteOS | v1.0 | February 2026*
