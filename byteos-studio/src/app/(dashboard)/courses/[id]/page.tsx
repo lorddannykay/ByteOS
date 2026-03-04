@@ -1,14 +1,19 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft, Plus, Trash2, GripVertical, Globe, FileText,
   ChevronDown, ChevronUp, Loader2, CheckCircle2, Sparkles, Wand2, LayoutList, Zap,
-  CircleHelp, RefreshCcw
+  CircleHelp, RefreshCcw, Eye, Timer
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useSidebarContent } from '@/contexts/SidebarContentContext'
+import { ContentToolsPanel } from '@/components/content/ContentToolsPanel'
+import { ModuleBlockEditor } from '@/components/content/ModuleBlockEditor'
+import { getModuleBodyText } from '@/lib/contentBlocks'
+import type { ModuleContent } from '@/types/content'
 
 interface QuizQuestion {
   id: string
@@ -22,7 +27,7 @@ interface QuizQuestion {
 interface Module {
   id: string
   title: string
-  content: { type: string; body: string }
+  content: ModuleContent
   order_index: number
   quiz?: { questions: QuizQuestion[] } | null
 }
@@ -35,6 +40,9 @@ interface Course {
   difficulty: string | null
   estimated_duration_mins: number | null
   is_adaptive: boolean
+  settings?: {
+    module_completion?: Record<string, { type: 'mark_button' | 'min_time'; min_time_secs?: number }>
+  } | null
   modules: Module[]
 }
 
@@ -52,6 +60,8 @@ export default function CourseEditorPage() {
   // AI state
   const [generatingOutline, setGeneratingOutline] = useState(false)
   const [generatingModule, setGeneratingModule] = useState<string | null>(null)
+  const [generatingAllModules, setGeneratingAllModules] = useState(false)
+  const hasAutoFilledRef = useRef(false)
   const [aiPrompt, setAiPrompt] = useState<Record<string, string>>({})
   const [showAiPanel, setShowAiPanel] = useState<string | null>(null)
   const [generatingQuiz, setGeneratingQuiz] = useState<string | null>(null)
@@ -66,6 +76,130 @@ export default function CourseEditorPage() {
   }, [id, router])
 
   useEffect(() => { fetchCourse() }, [fetchCourse])
+
+  // Auto-fill empty modules once on first load via curriculum-aware batch endpoint
+  const [autoFillProgress, setAutoFillProgress] = useState<string>('')
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    if (!course || course.modules.length === 0 || hasAutoFilledRef.current) return
+    const emptyModules = course.modules.filter((m) => !getModuleBodyText(m.content)?.trim())
+    if (emptyModules.length === 0) return
+    hasAutoFilledRef.current = true
+    generateAllEmptyModules(course)
+  }, [course])
+
+  async function generateAllEmptyModules(courseToUse: Course) {
+    const empty = courseToUse.modules.filter((m) => !getModuleBodyText(m.content)?.trim())
+    if (empty.length === 0) return
+    setGeneratingAllModules(true)
+    setAutoFillProgress('Building curriculum plan…')
+    setError(null)
+
+    // Fire batch generation (backend saves each module to DB as it completes)
+    const batchRes = fetch('/api/ai/generate-all-modules', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ course_id: courseToUse.id }),
+    })
+
+    // Poll for completed modules every 5 seconds
+    const totalEmpty = empty.length
+    const emptyIds = new Set(empty.map((m) => m.id))
+    let completedCount = 0
+
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/courses/${courseToUse.id}`)
+        if (!res.ok) return
+        const data = await res.json()
+        const newCourse = data as Course
+
+        let filled = 0
+        for (const mod of newCourse.modules) {
+          if (emptyIds.has(mod.id) && getModuleBodyText(mod.content)?.trim()) filled++
+        }
+
+        if (filled > completedCount) {
+          completedCount = filled
+          setCourse(newCourse)
+          if (newCourse.modules?.length > 0 && !expandedModule) {
+            setExpandedModule(newCourse.modules[0].id)
+          }
+          setAutoFillProgress(`Generated ${completedCount} of ${totalEmpty} modules…`)
+        }
+
+        if (completedCount >= totalEmpty) {
+          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+          pollIntervalRef.current = null
+          setGeneratingAllModules(false)
+          setAutoFillProgress('')
+        }
+      } catch { /* polling error — will retry next interval */ }
+    }, 5000)
+
+    // Also await the batch response to catch errors
+    try {
+      const res = await batchRes
+      const data = await res.json()
+      if (!res.ok) {
+        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+        setError(data.error ?? 'Curriculum-aware generation failed. Try again.')
+        setGeneratingAllModules(false)
+        setAutoFillProgress('')
+        // Fetch final state so any partially generated modules appear
+        await fetchCourse()
+        return
+      }
+      // Final fetch to ensure all content is up to date
+      await fetchCourse()
+    } catch (err) {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+      pollIntervalRef.current = null
+      setError('Generation request failed. Check your connection and try again.')
+      setGeneratingAllModules(false)
+      setAutoFillProgress('')
+    }
+
+    // Cleanup
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+    pollIntervalRef.current = null
+    setGeneratingAllModules(false)
+    setAutoFillProgress('')
+  }
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+    }
+  }, [])
+
+  // Inject content development panel into sidebar while on this page
+  const sidebarContent = useSidebarContent()
+  useEffect(() => {
+    if (!sidebarContent || !course) return
+    sidebarContent.setSidebarContent(
+      <ContentToolsPanel
+        onGenerateOutline={generateOutline}
+        onAddModule={() => addModule()}
+        generatingOutline={generatingOutline}
+        modules={course.modules.map((m) => ({ id: m.id, title: m.title }))}
+        expandedModuleId={expandedModule}
+        onJumpToModule={(moduleId, index) => {
+          setExpandedModule(moduleId)
+          setTimeout(() => {
+            document.getElementById(`module-${index + 1}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }, 100)
+        }}
+        onPromptIdeaSelect={(idea) => {
+          if (expandedModule) setAiPrompt((p) => ({ ...p, [expandedModule]: idea }))
+        }}
+      />
+    )
+    return () => { sidebarContent.setSidebarContent(null) }
+  }, [sidebarContent, course, generatingOutline, expandedModule])
 
   async function saveCourse(updates: Partial<Course>) {
     if (!course) return
@@ -144,7 +278,7 @@ export default function CourseEditorPage() {
     setGeneratingOutline(false)
   }
 
-  // ─── AI: Generate module content ─────────────────────────────────────────
+  // ─── AI: Generate module content (single, with prior module context) ─────
   async function generateModuleContent(moduleId: string) {
     if (!course) return
     const prompt = aiPrompt[moduleId]?.trim()
@@ -152,6 +286,21 @@ export default function CourseEditorPage() {
 
     setGeneratingModule(moduleId)
     const mod = course.modules.find((m) => m.id === moduleId)
+    const modIndex = course.modules.findIndex((m) => m.id === moduleId)
+
+    // Build prior module context from modules that come before this one
+    const priorModules = course.modules
+      .slice(0, modIndex)
+      .filter((m) => getModuleBodyText(m.content)?.trim())
+      .map((m) => ({
+        title: m.title,
+        summary: getModuleBodyText(m.content)
+          .split('\n')
+          .filter((l) => l.trim() && !l.startsWith('#'))
+          .slice(0, 4)
+          .join(' ')
+          .slice(0, 250),
+      }))
 
     const res = await fetch('/api/ai/generate-module', {
       method: 'POST',
@@ -161,6 +310,8 @@ export default function CourseEditorPage() {
         course_title: course.title,
         module_title: mod?.title,
         difficulty: course.difficulty,
+        context: course.description ?? undefined,
+        prior_modules_context: priorModules.length > 0 ? priorModules : undefined,
       }),
     })
     const data = await res.json()
@@ -172,11 +323,12 @@ export default function CourseEditorPage() {
     setGeneratingModule(null)
   }
 
-  // ─── AI: Generate quiz for module ─────────────────────────────────────────
   async function generateQuiz(moduleId: string) {
     if (!course) return
     const mod = course.modules.find((m) => m.id === moduleId)
-    if (!mod?.content?.body?.trim()) { setError('Write module content before generating a quiz.'); return }
+    if (!mod?.content) { setError('Write module content before generating a quiz.'); return }
+    const bodyText = getModuleBodyText(mod.content)
+    if (!bodyText?.trim()) { setError('Write module content before generating a quiz.'); return }
 
     setGeneratingQuiz(moduleId)
     const res = await fetch('/api/ai/generate-quiz', {
@@ -186,7 +338,7 @@ export default function CourseEditorPage() {
         module_id: moduleId,
         course_title: course.title,
         module_title: mod.title,
-        content: mod.content.body,
+        content: getModuleBodyText(mod.content),
         difficulty: course.difficulty,
         num_questions: 4,
       }),
@@ -199,6 +351,26 @@ export default function CourseEditorPage() {
       modules: c.modules.map((m) => m.id === moduleId ? { ...m, quiz: data.quiz } : m),
     } : c)
     setGeneratingQuiz(null)
+  }
+
+  async function deleteQuiz(moduleId: string) {
+    await saveModule(moduleId, { quiz: null })
+  }
+
+  function updateQuizQuestion(moduleId: string, questionIndex: number, updates: Partial<QuizQuestion>) {
+    const mod = course?.modules.find((m) => m.id === moduleId)
+    if (!mod?.quiz?.questions) return
+    const questions = mod.quiz.questions.map((q, i) =>
+      i === questionIndex ? { ...q, ...updates } : q
+    )
+    saveModule(moduleId, { quiz: { questions } })
+  }
+
+  function deleteQuizQuestion(moduleId: string, questionIndex: number) {
+    const mod = course?.modules.find((m) => m.id === moduleId)
+    if (!mod?.quiz?.questions) return
+    const questions = mod.quiz.questions.filter((_, i) => i !== questionIndex)
+    saveModule(moduleId, { quiz: questions.length > 0 ? { questions } : null })
   }
 
   if (loading) return (
@@ -220,6 +392,16 @@ export default function CourseEditorPage() {
         <div className="flex items-center gap-2">
           {saved && <span className="flex items-center gap-1.5 text-green-400 text-xs"><CheckCircle2 className="w-3.5 h-3.5" />Saved</span>}
           {saving && <Loader2 className="w-3.5 h-3.5 text-slate-500 animate-spin" />}
+          {course.modules.length > 0 && (
+            <Link
+              href={`/courses/${id}/preview`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-slate-100 hover:bg-slate-800 transition-all"
+            >
+              <Eye className="w-3.5 h-3.5" />Preview
+            </Link>
+          )}
           <button
             onClick={togglePublish}
             disabled={publishing}
@@ -326,6 +508,17 @@ export default function CourseEditorPage() {
 
       {/* Modules */}
       <div className="space-y-3">
+        {generatingAllModules && (
+          <div className="flex items-center gap-3 px-4 py-3 bg-violet-950/30 border border-violet-500/20 rounded-xl text-violet-200 text-sm">
+            <Loader2 className="w-4 h-4 shrink-0 animate-spin" />
+            <div className="flex flex-col gap-0.5">
+              <span className="font-medium">Generating curriculum-aware content…</span>
+              {autoFillProgress && (
+                <span className="text-xs text-violet-400">{autoFillProgress}</span>
+              )}
+            </div>
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-white">
             Modules <span className="text-slate-500 font-normal">({course.modules.length})</span>
@@ -373,7 +566,7 @@ export default function CourseEditorPage() {
         )}
 
         {course.modules.map((mod, idx) => (
-          <div key={mod.id} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+          <div key={mod.id} id={`module-${idx + 1}`} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
             {/* Module header */}
             <div className="flex items-center gap-3 px-4 py-3">
               <GripVertical className="w-4 h-4 text-slate-600 shrink-0" />
@@ -408,6 +601,7 @@ export default function CourseEditorPage() {
                   <p className="text-xs text-slate-500">Content saves automatically when you click outside.</p>
                   <button
                     onClick={() => setShowAiPanel(showAiPanel === mod.id ? null : mod.id)}
+                    disabled={generatingAllModules}
                     className={cn(
                       'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
                       showAiPanel === mod.id
@@ -416,7 +610,7 @@ export default function CourseEditorPage() {
                     )}
                   >
                     <Wand2 className="w-3.5 h-3.5" />
-                    {mod.content?.body ? 'Regenerate with AI' : 'Generate with AI'}
+                    {getModuleBodyText(mod.content) ? 'Regenerate with AI' : 'Generate with AI'}
                   </button>
                 </div>
 
@@ -437,7 +631,7 @@ export default function CourseEditorPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => generateModuleContent(mod.id)}
-                        disabled={!aiPrompt[mod.id]?.trim() || generatingModule === mod.id}
+                        disabled={generatingAllModules || !aiPrompt[mod.id]?.trim() || generatingModule === mod.id}
                         className="flex items-center gap-2 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 disabled:bg-slate-700 disabled:text-slate-500 text-white text-xs font-medium rounded-lg transition-all"
                       >
                         {generatingModule === mod.id ? (
@@ -459,7 +653,7 @@ export default function CourseEditorPage() {
                   </div>
                 )}
 
-                {/* Content textarea */}
+                {/* Content: block editor with main text + blocks */}
                 <div className="relative">
                   {generatingModule === mod.id && (
                     <div className="absolute inset-0 bg-slate-900/80 rounded-lg flex items-center justify-center z-10">
@@ -469,21 +663,63 @@ export default function CourseEditorPage() {
                       </div>
                     </div>
                   )}
-                  <textarea
-                    key={`${mod.id}-${mod.content?.body?.length}`}
-                    defaultValue={mod.content?.body ?? ''}
-                    onBlur={(e) => saveModule(mod.id, { content: { type: 'text', body: e.target.value } })}
-                    rows={12}
-                    placeholder="Write your module content here, or use 'Generate with AI' above..."
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg text-slate-200 text-sm p-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 resize-none leading-relaxed transition-all font-mono"
+                  <ModuleBlockEditor
+                    key={mod.id}
+                    content={mod.content}
+                    disabled={generatingModule === mod.id}
+                    placeholder="Write your module content here, or use 'Generate with AI' above and add blocks below..."
+                    onContentChange={(content) => saveModule(mod.id, { content })}
+                    courseId={id}
                   />
                 </div>
 
-                {mod.content?.body && (
+                {getModuleBodyText(mod.content) && (
                   <p className="text-xs text-slate-600 text-right">
-                    {mod.content.body.split(/\s+/).filter(Boolean).length} words
+                    {getModuleBodyText(mod.content).split(/\s+/).filter(Boolean).length} words
                   </p>
                 )}
+
+                {/* Completion rule — how learner can complete this section */}
+                <div className="border-t border-slate-800 pt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Timer className="w-3.5 h-3.5 text-slate-500" />
+                      <span className="text-xs font-medium text-slate-400">Completion rule</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={course.settings?.module_completion?.[mod.id]?.type ?? 'mark_button'}
+                        onChange={(e) => {
+                          const t = e.target.value as 'mark_button' | 'min_time'
+                          const next = { ...(course.settings || {}), module_completion: { ...(course.settings?.module_completion || {}), [mod.id]: t === 'min_time' ? { type: 'min_time' as const, min_time_secs: 60 } : { type: 'mark_button' as const } } }
+                          saveCourse({ settings: next })
+                        }}
+                        className="bg-slate-800 border border-slate-700 text-white text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500"
+                      >
+                        <option value="mark_button">Learner marks complete</option>
+                        <option value="min_time">Minimum time on section</option>
+                      </select>
+                      {course.settings?.module_completion?.[mod.id]?.type === 'min_time' && (
+                        <label className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <input
+                            type="number"
+                            min={1}
+                            max={60}
+                            value={Math.round((course.settings?.module_completion?.[mod.id]?.min_time_secs ?? 60) / 60)}
+                            onChange={(e) => {
+                              const mins = Math.max(1, Math.min(60, Number(e.target.value) || 1))
+                              const next = { ...(course.settings || {}), module_completion: { ...(course.settings?.module_completion || {}), [mod.id]: { type: 'min_time' as const, min_time_secs: mins * 60 } } }
+                              saveCourse({ settings: next })
+                            }}
+                            className="w-12 bg-slate-800 border border-slate-600 rounded px-1.5 py-1 text-slate-200 text-xs"
+                          />
+                          min
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-600">Require learners to spend minimum time (tab active) before they can mark this section complete.</p>
+                </div>
 
                 {/* Quiz section */}
                 <div className="border-t border-slate-800 pt-4 space-y-3">
@@ -491,52 +727,130 @@ export default function CourseEditorPage() {
                     <div className="flex items-center gap-2">
                       <CircleHelp className="w-3.5 h-3.5 text-slate-500" />
                       <span className="text-xs font-medium text-slate-400">Module Quiz</span>
-                      {mod.quiz?.questions?.length && (
+                      {mod.quiz?.questions?.length ? (
                         <span className="text-[10px] px-2 py-0.5 bg-green-500/15 text-green-400 border border-green-500/20 rounded-full">
                           {mod.quiz.questions.length} questions
                         </span>
-                      )}
+                      ) : null}
                     </div>
-                    <button
-                      onClick={() => generateQuiz(mod.id)}
-                      disabled={generatingQuiz === mod.id || !mod.content?.body?.trim()}
-                      title={!mod.content?.body?.trim() ? 'Add content before generating a quiz' : ''}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 border border-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-all"
-                    >
-                      {generatingQuiz === mod.id
-                        ? <><Loader2 className="w-3 h-3 animate-spin" />Generating...</>
-                        : mod.quiz?.questions?.length
-                          ? <><RefreshCcw className="w-3 h-3" />Regenerate quiz</>
-                          : <><CircleHelp className="w-3 h-3" />Generate quiz</>}
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      {mod.quiz?.questions?.length ? (
+                        <button
+                          type="button"
+                          onClick={() => deleteQuiz(mod.id)}
+                          title="Remove quiz from this module"
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 border border-slate-700 hover:border-red-500/30 text-xs font-medium rounded-lg transition-all"
+                        >
+                          <Trash2 className="w-3 h-3" />Delete quiz
+                        </button>
+                      ) : null}
+                      <button
+                        onClick={() => generateQuiz(mod.id)}
+                        disabled={generatingQuiz === mod.id || !getModuleBodyText(mod.content)?.trim()}
+                        title={!getModuleBodyText(mod.content)?.trim() ? 'Add content before generating a quiz' : ''}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 border border-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-all"
+                      >
+                        {generatingQuiz === mod.id
+                          ? <><Loader2 className="w-3 h-3 animate-spin" />Generating...</>
+                          : mod.quiz?.questions?.length
+                            ? <><RefreshCcw className="w-3 h-3" />Regenerate quiz</>
+                            : <><CircleHelp className="w-3 h-3" />Generate quiz</>}
+                      </button>
+                    </div>
                   </div>
 
                   {mod.quiz?.questions?.length ? (
                     <div className="space-y-2">
                       {mod.quiz.questions.map((q, qi) => (
                         <div key={q.id} className="bg-slate-800/60 border border-slate-700 rounded-lg p-3 space-y-2">
-                          <p className="text-xs font-medium text-slate-300">
-                            <span className="text-slate-600 mr-1.5">Q{qi + 1}.</span>{q.question}
-                          </p>
-                          <div className="grid grid-cols-2 gap-1">
+                          <div className="flex items-start gap-1.5">
+                            <span className="text-slate-600 text-xs font-medium shrink-0 pt-0.5">Q{qi + 1}.</span>
+                            <input
+                              type="text"
+                              defaultValue={q.question}
+                              onBlur={(e) => {
+                                const v = e.target.value.trim()
+                                if (v !== q.question) updateQuizQuestion(mod.id, qi, { question: v })
+                              }}
+                              placeholder="Question text"
+                              className="flex-1 min-w-0 bg-slate-900/80 border border-slate-600 rounded px-2 py-1 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => deleteQuizQuestion(mod.id, qi)}
+                              title="Remove this question"
+                              className="p-1 text-slate-500 hover:text-red-400 rounded shrink-0"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-1.5 pl-5">
                             {q.options.map((opt, oi) => (
-                              <p key={oi} className={cn('text-[10px] px-2 py-1 rounded',
-                                oi === q.correct ? 'bg-green-500/15 text-green-400 border border-green-500/20' : 'text-slate-500'
-                              )}>
-                                {String.fromCharCode(65 + oi)}. {opt}
-                              </p>
+                              <div key={oi} className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-slate-500 shrink-0 w-4">{String.fromCharCode(65 + oi)}.</span>
+                                <input
+                                  type="text"
+                                  defaultValue={opt}
+                                  onBlur={(e) => {
+                                    const v = e.target.value.trim()
+                                    if (v !== opt) {
+                                      const options = [...q.options]
+                                      options[oi] = v
+                                      updateQuizQuestion(mod.id, qi, { options })
+                                    }
+                                  }}
+                                  placeholder={`Option ${String.fromCharCode(65 + oi)}`}
+                                  className={cn(
+                                    'flex-1 min-w-0 bg-slate-900/80 border rounded px-2 py-1 text-[10px] placeholder-slate-500 focus:outline-none',
+                                    oi === q.correct ? 'border-green-500/50 text-green-400 focus:border-green-500' : 'border-slate-600 text-slate-400 focus:border-slate-500'
+                                  )}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => updateQuizQuestion(mod.id, qi, { correct: oi })}
+                                  title="Mark as correct answer"
+                                  className={cn(
+                                    'shrink-0 w-5 h-5 rounded border flex items-center justify-center text-[10px] font-medium transition-colors',
+                                    oi === q.correct ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'border-slate-600 text-slate-500 hover:border-slate-500'
+                                  )}
+                                >
+                                  {oi === q.correct ? '✓' : '○'}
+                                </button>
+                              </div>
                             ))}
                           </div>
-                          <div className="flex items-start gap-1.5">
-                            <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded font-medium shrink-0">topic</span>
-                            <p className="text-[10px] text-slate-500">{q.topic}</p>
+                          <div className="flex items-start gap-1.5 pl-5">
+                            <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded font-medium shrink-0 mt-0.5">topic</span>
+                            <input
+                              type="text"
+                              defaultValue={q.topic}
+                              onBlur={(e) => {
+                                const v = e.target.value.trim()
+                                if (v !== q.topic) updateQuizQuestion(mod.id, qi, { topic: v })
+                              }}
+                              placeholder="Topic tag"
+                              className="flex-1 min-w-0 bg-slate-900/80 border border-slate-600 rounded px-2 py-1 text-[10px] text-slate-500 placeholder-slate-600 focus:outline-none focus:border-slate-500"
+                            />
+                          </div>
+                          <div className="pl-5 space-y-0.5">
+                            <span className="text-[10px] text-slate-500 font-medium">Explanation (shown after answer)</span>
+                            <input
+                              type="text"
+                              defaultValue={q.explanation}
+                              onBlur={(e) => {
+                                const v = e.target.value.trim()
+                                if (v !== q.explanation) updateQuizQuestion(mod.id, qi, { explanation: v })
+                              }}
+                              placeholder="Optional explanation"
+                              className="w-full bg-slate-900/80 border border-slate-600 rounded px-2 py-1 text-[10px] text-slate-400 placeholder-slate-600 focus:outline-none focus:border-slate-500"
+                            />
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <p className="text-xs text-slate-600 italic">
-                      {mod.content?.body?.trim() ? 'No quiz yet — generate one above.' : 'Add module content first.'}
+                      {getModuleBodyText(mod.content)?.trim() ? 'No quiz yet — generate one above.' : 'Add module content first.'}
                     </p>
                   )}
                 </div>

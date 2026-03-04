@@ -4,6 +4,7 @@
 ## ALWAYS READ ECOSYSTEM.md FIRST
 Before making any changes, read ECOSYSTEM.md and AGENTS.md in the ByteOS root directory.
 These files contain the authoritative architecture, naming conventions, and build decisions.
+Before adding features, check **docs/STRATEGIC_PATH.md** for current state and prioritized next steps. For the current "Next 3" outcomes, read **PROGRESS.md**.
 
 ---
 

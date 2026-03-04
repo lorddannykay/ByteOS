@@ -2,29 +2,66 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 const TOGETHER_API_URL = 'https://api.together.xyz/v1/chat/completions'
-const MODEL = 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo'
 
-async function callAI(messages: { role: string; content: string }[], maxTokens = 600) {
-  const apiKey = process.env.TOGETHER_API_KEY!
+// Allowed tutor models (serverless); set TOGETHER_TUTOR_MODEL in .env.local to override.
+const TUTOR_MODELS = [
+  { id: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B ($0.05/$0.20 per 1M)' },
+  { id: 'LiquidAI/LFM2-24B-A2B', label: 'LFM2-24B-A2B ($0.03/$0.12 per 1M)' },
+  { id: 'meta-llama/Llama-3.2-3B-Instruct-Turbo', label: 'Llama 3.2 3B ($0.06 per 1M)' },
+  { id: 'meta-llama/Meta-Llama-3-8B-Instruct-Lite', label: 'Llama 3 8B Lite ($0.10 per 1M)' },
+  { id: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B ($0.15/$0.60 per 1M)' },
+  { id: 'google/gemma-3n-E4B-it', label: 'Gemma 3n E4B ($0.02/$0.04 per 1M)' },
+] as const
+
+const DEFAULT_TUTOR_MODEL = 'openai/gpt-oss-20b'
+const DEFAULT_MEMORY_MODEL = 'google/gemma-3n-E4B-it'
+
+function getTutorModel(): string {
+  const env = process.env.TOGETHER_TUTOR_MODEL?.trim()
+  if (env && TUTOR_MODELS.some((m) => m.id === env)) return env
+  return DEFAULT_TUTOR_MODEL
+}
+
+async function callAI(
+  messages: { role: string; content: string }[],
+  maxTokens = 600,
+  model = getTutorModel()
+): Promise<string> {
+  const apiKey = process.env.TOGETHER_API_KEY
+  if (!apiKey) throw new Error('TOGETHER_API_KEY not set')
   const res = await fetch(TOGETHER_API_URL, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, messages, max_tokens: maxTokens, temperature: 0.7, top_p: 0.9 }),
+    body: JSON.stringify({ model, messages, max_tokens: maxTokens, temperature: 0.7, top_p: 0.9 }),
   })
-  if (!res.ok) throw new Error(await res.text())
-  const data = await res.json()
-  return data.choices?.[0]?.message?.content?.trim() ?? ''
+  const text = await res.text()
+  if (!res.ok) throw new Error(text || `AI API ${res.status}`)
+  try {
+    const data = JSON.parse(text)
+    return data.choices?.[0]?.message?.content?.trim() ?? ''
+  } catch {
+    return ''
+  }
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!process.env.TOGETHER_API_KEY) return NextResponse.json({ error: 'AI tutor not configured' }, { status: 500 })
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!process.env.TOGETHER_API_KEY) return NextResponse.json({ error: 'AI tutor not configured' }, { status: 500 })
 
-  const admin = createAdminClient()
-  const { message, course_id, module_id, conversation_history = [] } = await request.json()
-  if (!message?.trim()) return NextResponse.json({ error: 'message required' }, { status: 400 })
+    let body: { message?: string; course_id?: string; module_id?: string; conversation_history?: unknown[] }
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    }
+
+    const { message, course_id, module_id, conversation_history = [] } = body
+    if (!message?.trim()) return NextResponse.json({ error: 'message required' }, { status: 400 })
+
+    const admin = createAdminClient()
 
   // ── 1. Load full course context (all modules) ──────────────────────────
   let courseContext = ''
@@ -57,12 +94,12 @@ export async function POST(request: NextRequest) {
   }
 
   // ── 2. Load learner memory + cross-course history ─────────────────────
-  const [{ data: learnerProfile }, { data: priorEnrollments }] = await Promise.all([
+  const [{ data: learnerProfile, error: learnerError }, { data: priorEnrollments }] = await Promise.all([
     admin
       .from('learner_profiles')
       .select('ai_tutor_context, learning_pace, difficulty_comfort, cognitive_style')
       .eq('user_id', user.id)
-      .single(),
+      .maybeSingle(),
     admin
       .from('enrollments')
       .select('course_id, status, progress_pct')
@@ -71,6 +108,10 @@ export async function POST(request: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(5),
   ])
+
+  if (learnerError) {
+    console.error('[tutor] learner_profiles query error:', learnerError.message)
+  }
 
   // Fetch prior course titles for context
   let priorCoursesText = ''
@@ -123,37 +164,62 @@ How to personalize:
   // ── 4. Build message history ───────────────────────────────────────────
   const messages = [
     { role: 'system', content: systemPrompt },
-    ...conversation_history.slice(-8).map((m: { role: string; content: string }) => ({ role: m.role, content: m.content })),
+    ...(Array.isArray(conversation_history) ? conversation_history.slice(-8) : []).map((m: { role?: string; content?: string }) => ({ role: m.role ?? 'user', content: String(m.content ?? '') })),
     { role: 'user', content: message },
   ]
 
-  const aiResponse = await callAI(messages, 600)
+  let aiResponse: string
+  try {
+    aiResponse = await callAI(messages, 600)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'AI service error'
+    console.error('[tutor] callAI error:', msg)
+    return NextResponse.json(
+      { error: msg.includes('401') || msg.includes('429') ? 'AI tutor is temporarily unavailable. Please try again later.' : 'Failed to get a response from Byte. Please try again.' },
+      { status: 502 }
+    )
+  }
 
-  // ── 5. Save interaction ────────────────────────────────────────────────
+  // ── 5. Save interaction (non-blocking; don't fail the request) ───────────
   if (course_id) {
-    await admin.from('ai_interactions').insert({
-      user_id: user.id,
-      course_id,
-      module_id: module_id ?? null,
-      interaction_type: 'question',
-      user_message: message,
-      ai_response: aiResponse,
-      context_used: { module_id, course_title: courseTitle, memory_used: !!memory },
-    })
-
-    await admin.from('learning_events').insert({
-      user_id: user.id,
-      course_id,
-      module_id: module_id ?? null,
-      event_type: 'ai_tutor_query',
-      modality: 'text',
-    })
+    try {
+      await admin.from('ai_interactions').insert({
+        user_id: user.id,
+        course_id,
+        module_id: module_id ?? null,
+        interaction_type: 'question',
+        user_message: message,
+        ai_response: aiResponse,
+        context_used: { module_id, course_title: courseTitle, memory_used: !!memory },
+      })
+    } catch (e) {
+      console.error('[tutor] ai_interactions insert error:', e)
+    }
+    try {
+      await admin.from('learning_events').insert({
+        user_id: user.id,
+        course_id,
+        module_id: module_id ?? null,
+        event_type: 'ai_tutor_query',
+        modality: 'text',
+      })
+    } catch (e) {
+      console.error('[tutor] learning_events insert error:', e)
+    }
   }
 
   // ── 6. Async memory update (fire and forget) ───────────────────────────
   updateLearnerMemory(user.id, message, aiResponse, admin).catch(() => {})
 
   return NextResponse.json({ response: aiResponse })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[tutor] POST error:', msg)
+    return NextResponse.json(
+      { error: 'Something went wrong. Please try again.' },
+      { status: 500 }
+    )
+  }
 }
 
 /**
@@ -198,7 +264,7 @@ Return only the JSON, nothing else.`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
+        model: process.env.TOGETHER_MEMORY_MODEL?.trim() || DEFAULT_MEMORY_MODEL,
         messages: [{ role: 'user', content: extractPrompt }],
         max_tokens: 150,
         temperature: 0.2,

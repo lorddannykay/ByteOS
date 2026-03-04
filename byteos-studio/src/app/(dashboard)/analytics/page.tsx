@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { CourseTimeSection } from '@/components/analytics/CourseTimeSection'
 
 function pct(n: number, d: number) {
   return d === 0 ? 0 : Math.round((n / d) * 100)
@@ -308,6 +309,9 @@ export default async function AnalyticsPage() {
             ))}
           </div>
         )}
+
+        {/* Time per section — course selector + learner × module time */}
+        <CourseTimeSection courses={courses ?? []} />
       </div>
     </div>
   )

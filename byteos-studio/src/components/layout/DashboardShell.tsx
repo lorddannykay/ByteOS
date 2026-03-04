@@ -1,0 +1,22 @@
+'use client'
+
+import { Sidebar } from '@/components/layout/Sidebar'
+import { SidebarContentProvider } from '@/contexts/SidebarContentContext'
+
+interface DashboardShellProps {
+  user: { email: string; full_name?: string | null; avatar_url?: string | null }
+  children: React.ReactNode
+}
+
+export function DashboardShell({ user, children }: DashboardShellProps) {
+  return (
+    <SidebarContentProvider>
+      <div className="flex h-screen bg-slate-950 overflow-hidden">
+        <Sidebar user={user} />
+        <main className="flex-1 overflow-y-auto bg-slate-950">
+          {children}
+        </main>
+      </div>
+    </SidebarContentProvider>
+  )
+}

@@ -12,9 +12,11 @@ import {
   Settings,
   LogOut,
   ChevronRight,
+  ArrowLeft,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { useSidebarContent } from '@/contexts/SidebarContentContext'
 
 interface SidebarProps {
   user: {
@@ -61,10 +63,17 @@ export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const sidebarContent = useSidebarContent()
 
   const initials = user.full_name
     ? user.full_name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
     : user.email.slice(0, 2).toUpperCase()
+
+  const isCourseEditPage =
+    pathname.startsWith('/courses/') &&
+    pathname !== '/courses' &&
+    pathname !== '/courses/new' &&
+    pathname.split('/').filter(Boolean).length >= 2
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -88,38 +97,72 @@ export function Sidebar({ user }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive =
-            item.href === '/'
-              ? pathname === '/'
-              : pathname.startsWith(item.href)
-
-          return (
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto flex flex-col min-h-0">
+        {isCourseEditPage ? (
+          <>
             <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group',
-                isActive
-                  ? 'bg-indigo-600/15 text-indigo-300 border border-indigo-500/20'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-              )}
+              href="/courses"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all group"
             >
-              <item.icon
-                className={cn(
-                  'w-4 h-4 shrink-0',
-                  isActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'
-                )}
-                strokeWidth={isActive ? 2.5 : 2}
-              />
-              <span className="flex-1">{item.label}</span>
-              {isActive && (
-                <ChevronRight className="w-3 h-3 text-indigo-500" />
-              )}
+              <ArrowLeft className="w-4 h-4 shrink-0 text-slate-500 group-hover:text-slate-300" />
+              <span className="flex-1">Back to courses</span>
             </Link>
-          )
-        })}
+            <p className="px-3 mt-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+              Editing course
+            </p>
+            {sidebarContent?.content && (
+              <div className="mt-2 space-y-1">
+                {sidebarContent.content}
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {navItems.map((item) => {
+              const isActive =
+                item.href === '/'
+                  ? pathname === '/'
+                  : pathname.startsWith(item.href)
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group',
+                    isActive
+                      ? 'bg-indigo-600/15 text-indigo-300 border border-indigo-500/20'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      'w-4 h-4 shrink-0',
+                      isActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'
+                    )}
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                  <span className="flex-1">{item.label}</span>
+                  {isActive && (
+                    <ChevronRight className="w-3 h-3 text-indigo-500" />
+                  )}
+                </Link>
+              )
+            })}
+
+            {/* Content development panel (injected by other pages) */}
+            {sidebarContent?.content && (
+              <div className="mt-4 pt-4 border-t border-slate-800 space-y-2">
+                <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                  Content tools
+                </p>
+                <div className="space-y-1">
+                  {sidebarContent.content}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </nav>
 
       {/* Settings + User */}

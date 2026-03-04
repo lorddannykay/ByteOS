@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
   const orgId = await getOrCreateOrg(user.id)
   const body = await request.json()
 
+  const now = new Date().toISOString()
   const { data, error } = await admin
     .from('courses')
     .insert({
@@ -38,6 +39,8 @@ export async function POST(request: NextRequest) {
       description: body.description ?? null,
       difficulty: body.difficulty ?? 'intermediate',
       status: 'draft',
+      created_at: now,
+      updated_at: now,
     })
     .select('id')
     .single()

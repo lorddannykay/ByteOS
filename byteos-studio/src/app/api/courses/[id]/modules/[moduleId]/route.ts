@@ -15,6 +15,7 @@ export async function PATCH(
   if ('title' in body) updates.title = body.title
   if ('content' in body) updates.content = body.content
   if ('order_index' in body) updates.order_index = body.order_index
+  if ('quiz' in body) updates.quiz = body.quiz
 
   const { data, error } = await admin
     .from('modules')

@@ -11,6 +11,9 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { QuizCard } from './QuizCard'
+import { FlashcardsCard, type FlashcardPair } from './FlashcardsCard'
+import { RichModuleContent } from '@/components/learn/RichModuleContent'
+import { isRichContent, type RichContent } from '@/types/content'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -26,7 +29,7 @@ interface QuizQuestion {
 interface Module {
   id: string
   title: string
-  content: { type: string; body: string } | null
+  content: ({ type: string; body?: string } & Partial<RichContent>) | null
   order_index: number
   quiz?: { questions: QuizQuestion[] } | null
 }
@@ -35,6 +38,9 @@ interface Course {
   id: string
   title: string
   modules: Module[]
+  settings?: {
+    module_completion?: Record<string, { type: 'mark_button' | 'min_time'; min_time_secs?: number }>
+  } | null
 }
 
 interface Message {
@@ -63,6 +69,21 @@ interface Props {
   enrollmentProgress: number
   personalizedWelcome?: Record<string, unknown> | null
   learnerName?: string
+}
+
+/** Get plain text body from module content for flashcards or fallback */
+function getContentBodyForFlashcards(content: Module['content']): string {
+  if (!content) return ''
+  if (content.type === 'text' && typeof (content as { body?: string }).body === 'string')
+    return (content as { body: string }).body
+  if (isRichContent(content)) {
+    const parts: string[] = []
+    if (content.introduction) parts.push(content.introduction)
+    content.sections?.forEach((s) => { parts.push(s.heading, s.content) })
+    if (content.summary) parts.push(content.summary)
+    return parts.join('\n\n')
+  }
+  return ''
 }
 
 // ─── Markdown renderer ───────────────────────────────────────────────────────
@@ -256,43 +277,6 @@ function renderMarkdown(body: string): React.ReactNode {
   return <div className="space-y-0.5">{elements}</div>
 }
 
-// ─── Media placeholder types ─────────────────────────────────────────────────
-
-const MEDIA_PLACEHOLDERS = [
-  {
-    id: 'video',
-    icon: Video,
-    label: 'Video Lesson',
-    description: 'Watch this module as a short video with visual explanations',
-    phase: 'Phase 4',
-    color: 'blue',
-  },
-  {
-    id: 'audio',
-    icon: Headphones,
-    label: 'Audio Narration',
-    description: 'Listen to this module while on the go',
-    phase: 'Phase 4',
-    color: 'purple',
-  },
-  {
-    id: 'interactive',
-    icon: Layers,
-    label: 'Interactive Exercise',
-    description: 'Practice with hands-on scenarios and simulations',
-    phase: 'Phase 5',
-    color: 'orange',
-  },
-  {
-    id: 'mindmap',
-    icon: Network,
-    label: 'Visual Mind Map',
-    description: 'See all concepts connected in an interactive diagram',
-    phase: 'Phase 5',
-    color: 'green',
-  },
-]
-
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function CourseViewer({
@@ -326,6 +310,11 @@ export function CourseViewer({
   }, [sidebarCollapsed, sidebarPinned])
   const [markingComplete, setMarkingComplete] = useState(false)
   const startTimeRef = useRef(Date.now())
+  // Time tracking: active (tab visible) vs idle (tab hidden or tab not focused)
+  const activeMsRef = useRef(0)
+  const lastVisibleAtRef = useRef<number>(Date.now())
+  const isVisibleRef = useRef(typeof document !== 'undefined' ? document.visibilityState === 'visible' : true)
+  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Welcome card
   const [showWelcome, setShowWelcome] = useState(!!personalizedWelcome?.message)
@@ -337,6 +326,8 @@ export function CourseViewer({
 
   // Modality
   const [activeModality, setActiveModality] = useState<string>('text')
+  const [flashcardsByModule, setFlashcardsByModule] = useState<Record<string, FlashcardPair[]>>({})
+  const [flashcardsLoading, setFlashcardsLoading] = useState(false)
 
   // Tutor state
   const [tutorOpen, setTutorOpen] = useState(false)
@@ -358,9 +349,61 @@ export function CourseViewer({
   const hasQuiz = !!(currentModule?.quiz?.questions?.length)
   const quizDoneForModule = quizCompletedModules.has(currentModuleId)
 
+  // Completion rule from course settings (admin can require min time per section)
+  const completionRule = course.settings?.module_completion?.[currentModuleId]
+  const minTimeSecs = completionRule?.type === 'min_time' ? (completionRule.min_time_secs ?? 0) : 0
+  const [elapsedActiveSecs, setElapsedActiveSecs] = useState(0)
+  const canMarkCompleteByTime = minTimeSecs <= 0 || elapsedActiveSecs >= minTimeSecs
+
   // ── Effects ──────────────────────────────────────────────────────────
+  // Visibility: only count time as "active" when tab is visible
+  useEffect(() => {
+    function handleVisibility() {
+      const now = Date.now()
+      if (document.visibilityState === 'visible') {
+        lastVisibleAtRef.current = now
+        isVisibleRef.current = true
+      } else {
+        if (isVisibleRef.current) activeMsRef.current += now - lastVisibleAtRef.current
+        isVisibleRef.current = false
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [])
+
+  // Heartbeat every 30s for section time (so admin sees time even if learner leaves without completing)
+  useEffect(() => {
+    heartbeatIntervalRef.current = setInterval(() => {
+      const totalMs = Date.now() - startTimeRef.current
+      const activeSecs = Math.round(activeMsRef.current / 1000)
+      const totalSecs = Math.round(totalMs / 1000)
+      if (totalSecs < 2) return
+      fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_type: 'section_heartbeat',
+          course_id: course.id,
+          module_id: currentModuleId,
+          modality: 'text',
+          duration_secs: totalSecs,
+          payload: { active_secs: activeSecs, total_secs: totalSecs },
+        }),
+      }).catch(() => {})
+    }, 30000)
+    return () => {
+      if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current)
+      heartbeatIntervalRef.current = null
+    }
+  }, [course.id, currentModuleId])
+
   useEffect(() => {
     startTimeRef.current = Date.now()
+    activeMsRef.current = 0
+    lastVisibleAtRef.current = Date.now()
+    isVisibleRef.current = typeof document !== 'undefined' ? document.visibilityState === 'visible' : true
+    setElapsedActiveSecs(0)
     setShowQuiz(false)
     fetch('/api/events', {
       method: 'POST',
@@ -373,6 +416,37 @@ export function CourseViewer({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Sync elapsed active time for min-time completion rule (so button enables when threshold met)
+  useEffect(() => {
+    if (minTimeSecs <= 0) return
+    const interval = setInterval(() => {
+      setElapsedActiveSecs(Math.round(activeMsRef.current / 1000))
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [currentModuleId, minTimeSecs])
+
+  // Fetch flashcards when switching to flashcards modality and we don't have cards for this module
+  useEffect(() => {
+    if (activeModality !== 'flashcards' || !currentModuleId || !currentModule?.content?.body) return
+    if (flashcardsByModule[currentModuleId]) return
+    setFlashcardsLoading(true)
+    fetch('/api/ai/generate-flashcards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: currentModule.content.body,
+        module_title: currentModule.title,
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        const cards = Array.isArray(data.cards) ? data.cards : []
+        setFlashcardsByModule((prev) => ({ ...prev, [currentModuleId]: cards }))
+      })
+      .catch(() => setFlashcardsByModule((prev) => ({ ...prev, [currentModuleId]: [] })))
+      .finally(() => setFlashcardsLoading(false))
+  }, [activeModality, currentModuleId, currentModule?.content?.body, currentModule?.title])
 
   // Text selection handler
   const handleSelection = useCallback(() => {
@@ -427,11 +501,23 @@ export function CourseViewer({
   async function handleMarkComplete() {
     if (isCompleted) return
     setMarkingComplete(true)
-    const durationSecs = Math.round((Date.now() - startTimeRef.current) / 1000)
+    const now = Date.now()
+    const totalMs = now - startTimeRef.current
+    if (isVisibleRef.current) activeMsRef.current += now - lastVisibleAtRef.current
+    const activeSecs = Math.round(activeMsRef.current / 1000)
+    const totalSecs = Math.round(totalMs / 1000)
+    const idleSecs = Math.max(0, totalSecs - activeSecs)
     await fetch('/api/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event_type: 'module_complete', course_id: course.id, module_id: currentModuleId, modality: 'text', duration_secs: durationSecs }),
+      body: JSON.stringify({
+        event_type: 'module_complete',
+        course_id: course.id,
+        module_id: currentModuleId,
+        modality: 'text',
+        duration_secs: totalSecs,
+        payload: { active_secs: activeSecs, idle_secs: idleSecs },
+      }),
     })
     const newCompleted = new Set(completed)
     newCompleted.add(currentModuleId)
@@ -484,17 +570,40 @@ export function CourseViewer({
     setMessages(newMessages)
     setThinking(true)
 
-    const res = await fetch('/api/tutor/query', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg, course_id: course.id, module_id: currentModuleId, conversation_history: messages }),
-    })
-    const data = await res.json()
-    setThinking(false)
-    setMessages([...newMessages, {
-      role: 'assistant',
-      content: data.response ?? 'Sorry, I had trouble answering that. Please try again.',
-    }])
+    try {
+      const res = await fetch('/api/tutor/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, course_id: course.id, module_id: currentModuleId, conversation_history: messages }),
+      })
+      const text = await res.text()
+      let data: { response?: string; error?: string } = {}
+      if (text) {
+        try {
+          data = JSON.parse(text)
+        } catch {
+          data = { error: 'Invalid response from tutor' }
+        }
+      }
+      if (!res.ok) {
+        setMessages([...newMessages, {
+          role: 'assistant',
+          content: data.error ?? `Something went wrong (${res.status}). Please try again.`,
+        }])
+        return
+      }
+      setMessages([...newMessages, {
+        role: 'assistant',
+        content: data.response ?? 'Sorry, I had trouble answering that. Please try again.',
+      }])
+    } catch {
+      setMessages([...newMessages, {
+        role: 'assistant',
+        content: 'Unable to reach Byte. Please check your connection and try again.',
+      }])
+    } finally {
+      setThinking(false)
+    }
   }
 
   function sendToByteFromSelection(action: string) {
@@ -509,7 +618,7 @@ export function CourseViewer({
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex bg-white overflow-hidden -mx-6 -mt-8 -mb-8 h-[calc(100vh-64px)]">
+    <div className="flex bg-background overflow-hidden -mx-6 -mt-8 -mb-8 h-[calc(100vh-64px)]">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && <div className="fixed inset-0 bg-black/40 z-20 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
@@ -629,7 +738,7 @@ export function CourseViewer({
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Top bar */}
-        <div className="flex items-center gap-3 px-6 py-3 border-b border-border bg-white shrink-0 flex-wrap">
+        <div className="flex items-center gap-3 px-6 py-3 border-b border-border bg-background shrink-0 flex-wrap">
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-1.5 rounded-md hover:bg-muted transition-colors">
             <List className="w-4 h-4 text-muted-foreground" />
           </button>
@@ -644,14 +753,14 @@ export function CourseViewer({
               { id: 'video', icon: Video, label: 'Watch', soon: true },
               { id: 'audio', icon: Headphones, label: 'Listen', soon: true },
               { id: 'mindmap', icon: Network, label: 'Map', soon: true },
-              { id: 'flashcards', icon: Layers, label: 'Cards', soon: true },
+              { id: 'flashcards', icon: Layers, label: 'Cards' },
             ].map(({ id, icon: Icon, label, soon }) => (
               <button key={id} onClick={() => !soon && setActiveModality(id)}
                 title={soon ? `${label} — coming in Phase 4` : label}
                 className={cn(
                   'flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all',
                   soon ? 'opacity-40 cursor-not-allowed' : '',
-                  activeModality === id && !soon ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-card-foreground'
+                  activeModality === id && !soon ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-card-foreground'
                 )}>
                 <Icon className="w-3 h-3" />
                 <span className="hidden md:inline">{label}</span>
@@ -679,12 +788,12 @@ export function CourseViewer({
         <div className="flex flex-1 min-h-0 overflow-hidden">
           {/* Module content + quiz */}
           <div className="flex flex-col min-h-0 overflow-hidden flex-1">
-            <div className="flex-1 overflow-y-auto relative" onClick={() => selectionPopup && setSelectionPopup(null)}>
+            <div className="flex-1 overflow-y-auto relative bg-background text-foreground" onClick={() => selectionPopup && setSelectionPopup(null)}>
               <div className="max-w-2xl mx-auto px-6 py-8 space-y-10" ref={contentRef}>
 
                 {/* Personalized welcome card */}
                 {showWelcome && welcome?.message && (
-                  <div className="relative bg-gradient-to-br from-primary/5 via-primary/5 to-white border border-primary/20 rounded-2xl p-6 shadow-sm shadow-sm">
+                  <div className="relative bg-gradient-to-br from-primary/5 via-primary/5 to-background border border-primary/20 rounded-2xl p-6 shadow-sm shadow-sm">
                     <button onClick={() => setShowWelcome(false)}
                       className="absolute top-3 right-3 p-1.5 hover:bg-primary/10 rounded-lg transition-colors">
                       <X className="w-4 h-4 text-primary" />
@@ -724,47 +833,54 @@ export function CourseViewer({
                   </div>
                 )}
 
-                {/* Module content — rendered markdown */}
-                <div>
-                  {renderMarkdown(currentModule?.content?.body ?? '')}
-                </div>
-
-                {/* Media/interactive placeholders */}
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                    <Layers className="w-3.5 h-3.5" />Coming in future phases
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {MEDIA_PLACEHOLDERS.map(({ id, icon: Icon, label, description, phase, color }) => (
-                      <div key={id}
-                        className={cn(
-                          'border-2 border-dashed rounded-xl p-4 space-y-2 opacity-60',
-                          color === 'blue' && 'border-blue-200 bg-blue-50/50',
-                          color === 'purple' && 'border-primary/20 bg-primary/5/50',
-                          color === 'orange' && 'border-orange-200 bg-orange-50/50',
-                          color === 'green' && 'border-green-200 bg-green-50/50',
-                        )}
-                      >
-                        <div className="flex items-center justify-between">
-                          <Icon className={cn('w-5 h-5',
-                            color === 'blue' && 'text-blue-500',
-                            color === 'purple' && 'text-primary',
-                            color === 'orange' && 'text-orange-500',
-                            color === 'green' && 'text-green-500',
-                          )} />
-                          <span className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded-full',
-                            color === 'blue' && 'bg-blue-100 text-blue-600',
-                            color === 'purple' && 'bg-primary/10 text-primary',
-                            color === 'orange' && 'bg-orange-100 text-orange-600',
-                            color === 'green' && 'bg-green-100 text-green-600',
-                          )}>{phase}</span>
-                        </div>
-                        <p className="text-xs font-semibold text-card-foreground">{label}</p>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">{description}</p>
-                      </div>
-                    ))}
+                {/* Module content — text or flashcards */}
+                {activeModality === 'flashcards' ? (
+                  <FlashcardsCard
+                    cards={flashcardsByModule[currentModuleId] ?? []}
+                    loading={flashcardsLoading}
+                    onRetry={() => {
+                      setFlashcardsByModule((prev) => {
+                        const next = { ...prev }
+                        delete next[currentModuleId]
+                        return next
+                      })
+                      setFlashcardsLoading(true)
+                      fetch('/api/ai/generate-flashcards', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          content: getContentBodyForFlashcards(currentModule?.content ?? null),
+                          module_title: currentModule?.title ?? '',
+                        }),
+                      })
+                        .then((r) => r.json())
+                        .then((data) => {
+                          const cards = Array.isArray(data.cards) ? data.cards : []
+                          setFlashcardsByModule((prev) => ({ ...prev, [currentModuleId]: cards }))
+                        })
+                        .finally(() => setFlashcardsLoading(false))
+                    }}
+                  />
+                ) : isRichContent(currentModule?.content) ? (
+                  <RichModuleContent
+                    content={currentModule.content}
+                    renderMarkdown={renderMarkdown}
+                    onExplain={(context) => {
+                      setInput(context)
+                      setTutorOpen(true)
+                    }}
+                    courseId={course.id}
+                    moduleId={currentModuleId}
+                    moduleTitle={currentModule?.title ?? ''}
+                    learnerName={learnerName}
+                    onQuizComplete={handleQuizComplete}
+                    onAskByte={handleQuizAskByte}
+                  />
+                ) : (
+                  <div>
+                    {renderMarkdown((currentModule?.content as { body?: string })?.body ?? '')}
                   </div>
-                </div>
+                )}
 
                 {/* Quiz — shown after Mark Complete */}
                 {showQuiz && hasQuiz && currentModule?.quiz && (
@@ -786,18 +902,20 @@ export function CourseViewer({
 
             {/* Bottom nav */}
             {!showQuiz && (
-              <div className="shrink-0 border-t border-border bg-white px-6 py-4 flex items-center gap-4">
+              <div className="shrink-0 border-t border-border bg-background px-6 py-4 flex items-center gap-4">
                 <button onClick={() => prevModule && navigateTo(prevModule.id)} disabled={!prevModule}
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-card-foreground disabled:opacity-30 disabled:cursor-not-allowed rounded-lg hover:bg-muted transition-all">
                   <ChevronLeft className="w-4 h-4" />Previous
                 </button>
                 <div className="flex-1 flex justify-center">
-                  <button onClick={handleMarkComplete} disabled={isCompleted || markingComplete}
+                  <button onClick={handleMarkComplete} disabled={isCompleted || markingComplete || !canMarkCompleteByTime}
                     className={cn('flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all',
-                      isCompleted ? 'bg-green-100 text-green-700 cursor-default' : 'bg-primary hover:bg-primary/100 text-white shadow-md shadow-md'
+                      isCompleted ? 'bg-green-100 text-green-700 cursor-default' : !canMarkCompleteByTime ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-primary hover:bg-primary/100 text-white shadow-md shadow-md'
                     )}>
                     <CheckCircle2 className="w-4 h-4" />
-                    {isCompleted ? 'Completed' : markingComplete ? 'Saving...' : hasQuiz && !quizDoneForModule ? 'Complete & take quiz' : 'Mark complete'}
+                    {isCompleted ? 'Completed' : markingComplete ? 'Saving...' : !canMarkCompleteByTime
+                      ? `Spend at least ${Math.ceil(minTimeSecs / 60)} min here (${Math.floor(elapsedActiveSecs / 60)} min)`
+                      : hasQuiz && !quizDoneForModule ? 'Complete & take quiz' : 'Mark complete'}
                   </button>
                 </div>
                 <button onClick={() => nextModule && navigateTo(nextModule.id)} disabled={!nextModule}
@@ -811,7 +929,7 @@ export function CourseViewer({
           {/* Byte tutor panel */}
           {tutorOpen && (
             <div className="w-80 border-l border-border bg-muted flex flex-col shrink-0">
-              <div className="px-4 py-3 border-b border-border bg-white flex items-center gap-3">
+              <div className="px-4 py-3 border-b border-border bg-background flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-sm shadow-md">
                   <Bot className="w-4 h-4 text-white" />
                 </div>
@@ -831,7 +949,7 @@ export function CourseViewer({
                       <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
                         <Bot className="w-3 h-3 text-white" />
                       </div>
-                      <div className="bg-white border border-border rounded-xl rounded-tl-sm px-3 py-2 text-xs text-card-foreground leading-relaxed">
+                      <div className="bg-card border border-border rounded-xl rounded-tl-sm px-3 py-2 text-xs text-card-foreground leading-relaxed">
                         {learnerName ? `Hi ${learnerName}! ` : 'Hi! '}I&apos;m Byte. I know <span className="font-medium text-primary">{currentModule?.title}</span> and your full learning history. Ask me anything.
                         <br /><span className="text-muted-foreground text-[10px] mt-1 block">💡 Tip: highlight any text in the module to get quick explanations.</span>
                       </div>
@@ -839,7 +957,7 @@ export function CourseViewer({
                     <div className="space-y-1.5 pl-8">
                       {['Give me a quick summary', 'Explain this with an example', 'What are the key takeaways?', 'How does this connect to what I\'ve learned before?'].map((prompt) => (
                         <button key={prompt} onClick={() => { setInput(prompt); setTimeout(() => handleTutorSend(prompt), 50) }}
-                          className="w-full text-left px-2.5 py-1.5 bg-white border border-border hover:border-primary/30 hover:bg-primary/10 text-muted-foreground hover:text-primary text-xs rounded-lg transition-all">
+                          className="w-full text-left px-2.5 py-1.5 bg-card border border-border hover:border-primary/30 hover:bg-primary/10 text-muted-foreground hover:text-primary text-xs rounded-lg transition-all">
                           {prompt}
                         </button>
                       ))}
@@ -855,7 +973,7 @@ export function CourseViewer({
                       </div>
                     )}
                     <div className={cn('max-w-[90%] px-3 py-2 rounded-xl text-xs leading-relaxed',
-                      msg.role === 'user' ? 'bg-primary text-white rounded-tr-sm' : 'bg-white border border-border text-card-foreground rounded-tl-sm'
+                      msg.role === 'user' ? 'bg-primary text-white rounded-tr-sm' : 'bg-card border border-border text-card-foreground rounded-tl-sm'
                     )}>
                       {msg.content}
                     </div>
@@ -867,7 +985,7 @@ export function CourseViewer({
                     <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0">
                       <Bot className="w-3 h-3 text-white" />
                     </div>
-                    <div className="bg-white border border-border rounded-xl rounded-tl-sm px-3 py-2.5">
+                    <div className="bg-card border border-border rounded-xl rounded-tl-sm px-3 py-2.5">
                       <div className="flex gap-1">
                         {[0, 1, 2].map((i) => (
                           <div key={i} className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
@@ -879,7 +997,7 @@ export function CourseViewer({
                 <div ref={messagesEndRef} />
               </div>
 
-              <div className="p-3 border-t border-border bg-white">
+              <div className="p-3 border-t border-border bg-background">
                 <div className="flex items-end gap-2">
                   <textarea
                     value={input}

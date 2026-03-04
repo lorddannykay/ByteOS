@@ -27,17 +27,23 @@ Every new feature or fix should map to at least one of these pillars. If it does
 - **Learner experience**: Personalized dashboard (streak, time, engagement, Byte recommends), course viewer with markdown, quizzes, AI tutor Byte (RAG + longitudinal memory), My Memory page, onboarding assessment, text selection → Byte.  
 - **Intelligence**: Next best action engine, onboarding bootstrap, learner_profiles + ai_tutor_context, struggle detection from quizzes, adaptive path ordering (optional courses reordered by Byte).  
 - **Paths & certs**: Learning paths (Studio: create/edit, mandatory/adaptive/certificate toggles; Learn: enroll, personalised sequence, progress sync), path unlock rules (complete previous first), certifications on path completion with shareable public link.  
-- **Studio analytics**: Org-level analytics (completions, quiz scores, struggle topics).  
+- **Studio analytics**: Org-level analytics (completions, quiz scores, struggle topics); **Time per section** — per-course view of learner time per module with active vs idle time, “possible skip” and “over time” flags.
 - **Progress**: Dedicated Progress page (courses, paths, certificates), path progress % sync on course complete.
+- **Completion rules (Studio + Learn)**: Admins can set per-module completion rule: “Learner marks complete” (default) or “Minimum time on section” (minutes). Learn enforces minimum active time (tab visible) before the Mark complete button is enabled; time tracking uses Page Visibility API so idle time is excluded.
 
 **Recently added (Action Plans A–C)**  
 - **Creator velocity**: Assign path to learners from Studio path editor (org members list + optional due date); “Assigned learners” table with progress and due date.  
 - **Learner polish**: Certificate page has reliable “Print / Save as PDF” (client component + print CSS); Learn dashboard shows “Upcoming deadlines” and “Required by your organisation” when relevant.  
 - **Compliance**: Studio “Compliance” page lists path assignments with due date, progress, and status (Overdue / At risk / On track / Completed); Learn dashboard surfaces required paths and due-soon items.
 
+**Built, not yet shipped (uncommitted or in review)**  
+- **Flashcards modality**: FlashcardsCard in Learn course viewer; generate-flashcards API.  
+- **Document-to-course**: Studio generate-from-document API (PDF/DOCX/URL → course outline + modules).  
+- **SCORM 1.2 import**: Studio import-scorm API (ZIP → courses + modules).
+
 **Remaining gaps vs. ultimate goal**  
-- **Creator velocity**: No document/URL import or RAG-from-docs yet.  
-- **Modality**: Only text is live; Video/Audio/MindMap/Flashcards/Feed/Play are placeholders.  
+- **Creator velocity**: Document/URL import and SCORM import built; RAG-from-docs optional follow-on.  
+- **Modality**: Text + Flashcards live; Video/Audio/MindMap/Feed/Play still placeholders.  
 - **Compliance**: No email reminders for at-risk/overdue yet.  
 - **Polish**: No server-generated certificate PDF.  
 - **Scale**: No white-label, SSO, or HRIS hooks yet (explicitly later phase).
@@ -45,6 +51,19 @@ Every new feature or fix should map to at least one of these pillars. If it does
 ---
 
 ## 3. Prioritized Next Developments (In Order)
+
+**Next 3 (concrete outcomes)** — update after each milestone:
+1. **Visibility**: Record Byte memory demo video (1–2 min); add 2–4 screenshots to docs/screenshots and link from README.
+2. **Ship recent work**: Commit and document Flashcards modality, document-to-course (generate-from-document), and SCORM 1.2 import; update current state in Section 2.
+3. **One more win**: Either ship one more modality end-to-end (e.g. Audio TTS for current module) or add compliance email reminders for at-risk/overdue.
+
+**Pending phases (from ECOSYSTEM §8)**  
+- **Phase 3 remaining**: Video modality (wire to bytetexttovid / Remotion).  
+- **Phase 5 — Engagement & Scale**: BytePlay, ByteFeed, ByteMind modalities; white-label per org; HRIS integration hooks.  
+- **Compliance**: Email reminders for at-risk/overdue learners.  
+- **Polish**: Server-generated certificate PDF.
+
+---
 
 Priorities are chosen to maximise progress toward the four pillars without overbuilding.
 

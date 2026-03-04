@@ -197,9 +197,10 @@ Instead, it silently powers ALL personalization decisions behind the scenes.
 
 ## Current Build Status
 
-**Phase**: Phase 1 — Foundation
-**Priority**: Supabase schema + shared auth + project scaffold
+**Phase**: Phases 1–4 complete; Phase 5 (Engagement & Scale) not started.
+**Priority**: Visibility (demo, screenshots), document/SCORM import, second modality; then further modalities and scale.
 
+For up-to-date state and next priorities, see **docs/STRATEGIC_PATH.md** and **docs/ACTION_PLANS.md**.
 See `ECOSYSTEM.md` Section 8 for the full build roadmap with checkboxes.
 
 ---

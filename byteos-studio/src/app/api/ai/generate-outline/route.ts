@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 const TOGETHER_API_URL = 'https://api.together.xyz/v1/chat/completions'
-const MODEL = 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo'
+const MODEL = 'meta-llama/Llama-3.3-70B-Instruct-Turbo'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()

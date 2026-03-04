@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, BookOpen, Sparkles, LayoutList, CheckCircle2, Loader2, Package } from 'lucide-react'
+import { ArrowLeft, BookOpen, Sparkles, LayoutList, CheckCircle2, Loader2, Package, FileText, Upload } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const difficulties = [
@@ -14,7 +14,7 @@ const difficulties = [
 
 const numModulesOptions = [3, 5, 7, 10]
 
-type Mode = 'choose' | 'ai' | 'manual'
+type Mode = 'choose' | 'ai' | 'manual' | 'document' | 'scorm'
 
 const AI_STEPS = [
   'Creating course...',
@@ -37,6 +37,9 @@ export default function NewCoursePage() {
   const [loading, setLoading] = useState(false)
   const [aiStep, setAiStep] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const [documentFile, setDocumentFile] = useState<File | null>(null)
+  const [documentUrl, setDocumentUrl] = useState('')
+  const [scormFile, setScormFile] = useState<File | null>(null)
 
   // ─── AI generation ──────────────────────────────────────────────
   async function handleCreateWithAI(e: React.FormEvent) {
@@ -91,8 +94,69 @@ export default function NewCoursePage() {
     router.push(`/courses/${id}`)
   }
 
+  // ─── Import from document (RAG) ─────────────────────────────────
+  async function handleImportFromDocument(e: React.FormEvent) {
+    e.preventDefault()
+    if (!documentFile && !documentUrl.trim()) return
+    setLoading(true)
+    setError(null)
+    setAiStep(0)
+    const stepInterval = setInterval(() => setAiStep((s) => Math.min(s + 1, AI_STEPS.length - 1)), 3500)
+    try {
+      let res: Response
+      if (documentFile) {
+        const form = new FormData()
+        form.append('file', documentFile)
+        res = await fetch('/api/ai/generate-from-document', { method: 'POST', body: form })
+      } else {
+        res = await fetch('/api/ai/generate-from-document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: documentUrl.trim() }),
+        })
+      }
+      clearInterval(stepInterval)
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error ?? 'Import failed')
+        setLoading(false)
+        return
+      }
+      const { course_id } = await res.json()
+      router.push(`/courses/${course_id}`)
+    } catch {
+      clearInterval(stepInterval)
+      setError('Import failed')
+      setLoading(false)
+    }
+  }
+
+  // ─── Import SCORM ───────────────────────────────────────────────
+  async function handleImportScorm(e: React.FormEvent) {
+    e.preventDefault()
+    if (!scormFile) return
+    setLoading(true)
+    setError(null)
+    try {
+      const form = new FormData()
+      form.append('file', scormFile)
+      const res = await fetch('/api/courses/import-scorm', { method: 'POST', body: form })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error ?? 'SCORM import failed')
+        setLoading(false)
+        return
+      }
+      const { course_id } = await res.json()
+      router.push(`/courses/${course_id}`)
+    } catch {
+      setError('SCORM import failed')
+      setLoading(false)
+    }
+  }
+
   // ─── AI loading overlay ───────────────────────────────────────────
-  if (loading && mode === 'ai') {
+  if (loading && (mode === 'ai' || mode === 'document')) {
     return (
       <div className="min-h-screen flex items-center justify-center p-8">
         <div className="max-w-sm w-full text-center space-y-6">
@@ -190,15 +254,48 @@ export default function NewCoursePage() {
                 ))}
               </div>
             </button>
-          </div>
 
-          {/* Import SCORM / formats — coming soon */}
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-800/60 border border-slate-700 border-dashed text-slate-500">
-            <Package className="w-5 h-5 shrink-0 text-slate-600" />
-            <div className="text-sm">
-              <span className="font-medium text-slate-400">Import SCORM & other formats</span>
-              <span className="ml-1">— coming soon. Upload SCORM 1.2 packages or HTML bundles and we&apos;ll map them into ByteOS courses.</span>
-            </div>
+          {/* Import from document */}
+            <button
+              onClick={() => setMode('document')}
+              className="group text-left bg-slate-900 border border-emerald-500/30 hover:border-emerald-400 rounded-xl p-6 space-y-3 transition-all hover:bg-emerald-950/20"
+            >
+              <div className="w-12 h-12 rounded-xl bg-emerald-600/15 border border-emerald-500/20 flex items-center justify-center">
+                <FileText className="w-6 h-6 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold text-sm">Import from document</h3>
+                <p className="text-slate-500 text-xs mt-1 leading-relaxed">
+                  Upload a PDF or DOCX, or paste a URL. Byte extracts text and generates a course from it (RAG).
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {['PDF', 'DOCX', 'URL'].map((t) => (
+                  <span key={t} className="text-[10px] px-2 py-0.5 bg-emerald-600/15 text-emerald-300 rounded-full border border-emerald-500/20">{t}</span>
+                ))}
+              </div>
+            </button>
+
+            {/* Import SCORM */}
+            <button
+              onClick={() => setMode('scorm')}
+              className="group text-left bg-slate-900 border border-amber-500/30 hover:border-amber-400 rounded-xl p-6 space-y-3 transition-all hover:bg-amber-950/20"
+            >
+              <div className="w-12 h-12 rounded-xl bg-amber-600/15 border border-amber-500/20 flex items-center justify-center">
+                <Package className="w-6 h-6 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold text-sm">Import SCORM</h3>
+                <p className="text-slate-500 text-xs mt-1 leading-relaxed">
+                  Upload a SCORM 1.2 ZIP. We create a course and modules; you can edit it like any other course.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {['SCORM 1.2', 'Edit after import'].map((t) => (
+                  <span key={t} className="text-[10px] px-2 py-0.5 bg-amber-600/15 text-amber-300 rounded-full border border-amber-500/20">{t}</span>
+                ))}
+              </div>
+            </button>
           </div>
         </div>
       )}
@@ -209,13 +306,15 @@ export default function NewCoursePage() {
           <div className="flex items-center gap-4">
             <div className={cn(
               'w-12 h-12 rounded-xl border flex items-center justify-center',
-              mode === 'ai' ? 'bg-violet-600/15 border-violet-500/20' : 'bg-slate-800 border-slate-700'
+              mode === 'ai' ? 'bg-violet-600/15 border-violet-500/20' :
+              mode === 'document' ? 'bg-emerald-600/15 border-emerald-500/20' :
+              mode === 'scorm' ? 'bg-amber-600/15 border-amber-500/20' : 'bg-slate-800 border-slate-700'
             )}>
-              {mode === 'ai' ? <Sparkles className="w-6 h-6 text-violet-400" /> : <BookOpen className="w-6 h-6 text-slate-400" />}
+              {mode === 'ai' ? <Sparkles className="w-6 h-6 text-violet-400" /> : mode === 'document' ? <FileText className="w-6 h-6 text-emerald-400" /> : mode === 'scorm' ? <Package className="w-6 h-6 text-amber-400" /> : <BookOpen className="w-6 h-6 text-slate-400" />}
             </div>
             <div>
               <h1 className="text-xl font-semibold text-white">
-                {mode === 'ai' ? 'Create with AI' : 'Build manually'}
+                {mode === 'ai' ? 'Create with AI' : mode === 'document' ? 'Import from document' : mode === 'scorm' ? 'Import SCORM' : 'Build manually'}
               </h1>
               <button onClick={() => setMode('choose')} className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
                 ← Change mode
@@ -227,6 +326,62 @@ export default function NewCoursePage() {
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-red-400 text-sm">{error}</div>
           )}
 
+          {mode === 'document' && (
+            <form onSubmit={handleImportFromDocument} className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-300">Upload PDF or DOCX</label>
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.doc,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
+                  onChange={(e) => setDocumentFile(e.target.files?.[0] ?? null)}
+                  className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-emerald-600/20 file:text-emerald-300 file:text-sm text-sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-300">Or paste a URL</label>
+                <input
+                  type="url"
+                  value={documentUrl}
+                  onChange={(e) => setDocumentUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-sm"
+                />
+              </div>
+              <div className="flex items-center gap-3 pt-2">
+                <button type="submit" disabled={loading || (!documentFile && !documentUrl.trim())}
+                  className="flex-1 py-2.5 font-medium rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 text-white text-sm flex items-center justify-center gap-2">
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  {loading ? 'Generating course...' : 'Generate course from document'}
+                </button>
+                <Link href="/courses" className="px-4 py-2.5 text-slate-400 hover:text-slate-200 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">Cancel</Link>
+              </div>
+            </form>
+          )}
+
+          {mode === 'scorm' && (
+            <form onSubmit={handleImportScorm} className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-300">SCORM 1.2 ZIP file <span className="text-red-400">*</span></label>
+                <input
+                  type="file"
+                  accept=".zip,application/zip"
+                  onChange={(e) => setScormFile(e.target.files?.[0] ?? null)}
+                  className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-amber-600/20 file:text-amber-300 file:text-sm text-sm"
+                />
+                <p className="text-xs text-slate-500">We create a course and modules. You can edit it like any other course after import.</p>
+              </div>
+              <div className="flex items-center gap-3 pt-2">
+                <button type="submit" disabled={loading || !scormFile}
+                  className="flex-1 py-2.5 font-medium rounded-lg bg-amber-600 hover:bg-amber-500 disabled:bg-slate-800 disabled:text-slate-600 text-white text-sm flex items-center justify-center gap-2">
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />}
+                  {loading ? 'Importing...' : 'Import SCORM'}
+                </button>
+                <Link href="/courses" className="px-4 py-2.5 text-slate-400 hover:text-slate-200 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">Cancel</Link>
+              </div>
+            </form>
+          )}
+
+          {mode !== 'document' && mode !== 'scorm' && (
           <form onSubmit={mode === 'ai' ? handleCreateWithAI : handleCreateManual} className="space-y-5">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-300">Course title <span className="text-red-400">*</span></label>
@@ -297,6 +452,7 @@ export default function NewCoursePage() {
               </Link>
             </div>
           </form>
+          )}
         </div>
       )}
     </div>

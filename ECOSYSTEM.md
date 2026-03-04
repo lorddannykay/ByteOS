@@ -327,9 +327,10 @@ learning_events (
   module_id uuid references modules,
   event_type text NOT NULL, -- 'module_start' | 'module_complete' | 'quiz_attempt' |
                             -- 'video_play' | 'video_pause' | 'video_replay' |
+                            -- 'section_heartbeat' (periodic time on section; payload: active_secs, total_secs) |
                             -- 'ai_tutor_open' | 'ai_tutor_query' | 'modality_switch' |
                             -- 'drop_off' | 'streak_broken' | 'streak_maintained'
-  payload jsonb,            -- event-specific data
+  payload jsonb,            -- event-specific data (e.g. module_complete: active_secs, idle_secs)
   modality text,            -- which modality was active when event fired
   duration_secs integer,    -- time spent if applicable
   created_at timestamptz DEFAULT now()
@@ -450,43 +451,45 @@ ByteOS/
 
 ## 8. Build Phases (The Roadmap)
 
-### Phase 1 — Foundation (Current Priority)
+**Current state (sync with docs/STRATEGIC_PATH.md):** Phases 1–4 are complete; Phase 5 is not started.
+
+### Phase 1 — Foundation
 **Goal**: Supabase schema + shared auth + data contracts
-- [ ] Create Supabase project and run schema migrations
-- [ ] Set up shared auth (Supabase Auth) across Studio + Learn
-- [ ] Define environment variable contracts
-- [ ] Create ECOSYSTEM.md, AGENTS.md, .cursorrules
-- [ ] Set up ByteOS Studio (ByteLab migration)
-- [ ] Set up ByteOS Learn (ByteVerse-LMS migration)
+- [x] Create Supabase project and run schema migrations
+- [x] Set up shared auth (Supabase Auth) across Studio + Learn
+- [x] Define environment variable contracts
+- [x] Create ECOSYSTEM.md, AGENTS.md, .cursorrules
+- [x] Set up ByteOS Studio (ByteLab migration)
+- [x] Set up ByteOS Learn (ByteVerse-LMS migration)
 
 ### Phase 2 — Integration Layer
 **Goal**: Course published in Studio appears in Learn, events flow back
-- [ ] ByteLab export → writes to Supabase `courses` + `modules`
-- [ ] ByteVerse-LMS reads courses from Supabase and renders
-- [ ] Learner events write to `learning_events`
-- [ ] End-to-end flow: author → publish → learn → track
+- [x] ByteLab export → writes to Supabase `courses` + `modules`
+- [x] ByteVerse-LMS reads courses from Supabase and renders
+- [x] Learner events write to `learning_events`
+- [x] End-to-end flow: author → publish → learn → track
 
 ### Phase 3 — Learner Experience
 **Goal**: Personalized dashboard, modality switching, AI tutor
-- [ ] Learner home with personalized path (reads `learner_profiles`)
-- [ ] Modality switcher on course view
+- [x] Learner home with personalized path (reads `learner_profiles`)
+- [x] Modality switcher on course view
 - [ ] Video modality (wire to bytetexttovid / Remotion)
-- [ ] AI Tutor sidebar (reactive Q&A, RAG against course content)
-- [ ] Proactive nudges from Intelligence layer
+- [x] AI Tutor sidebar (reactive Q&A, RAG against course content)
+- [x] Proactive nudges from Intelligence layer
 
 ### Phase 4 — Intelligence
 **Goal**: System learns about the learner
-- [ ] bytengine writes `learner_skills` + `skill_gaps` after each session
-- [ ] AI tutor becomes longitudinal (reads `ai_interactions` history)
-- [ ] Modality dispatcher auto-recommends format switches
-- [ ] Admin analytics dashboard (completions, skill gaps, drop-off)
+- [x] Learner profile and next-best-action (Learn API + optional Intelligence)
+- [x] AI tutor longitudinal memory (reads `ai_interactions` + `learner_profiles.ai_tutor_context`; implemented in Learn API)
+- [x] Struggle detection from quizzes; adaptive path ordering
+- [x] Admin analytics dashboard (completions, skill gaps, drop-off)
 
 ### Phase 5 — Engagement & Scale
 **Goal**: All modalities + compliance + white-label
 - [ ] BytePlay game modality wired into Learn
 - [ ] shayshay ByteFeed modality
 - [ ] ByteMind mindmap modality
-- [ ] Compliance tracking + certifications
+- [x] Compliance tracking + certifications
 - [ ] White-label per org
 - [ ] HRIS integration hooks (Workday, BambooHR)
 
