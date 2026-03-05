@@ -1,18 +1,18 @@
-<p align="center">
-  <strong>Sudar</strong><br/>
-  <em>Learning that remembers you</em>
-</p>
+<div align="center">
 
-<p align="center">
-  An AI-native learning platform: one reference implementation, and a plugin layer (ALP) so existing LMSs can gain learner memory and adaptive tutoring without full replacement.
-</p>
+# Sudar
 
-<p align="center">
-  <strong>Learns with you, for you.</strong>
-</p>
+*Learning that remembers you*
+
+An AI-native learning platform: one reference implementation, and a plugin layer (ALP) so existing LMSs can gain learner memory and adaptive tutoring without full replacement.
+
+**Learns with you, for you.**
+
+</div>
+<div>
+</div>
 
 ---
-
 ## What Sudar is
 
 **Sudar** (formerly ByteOS) does two things:
