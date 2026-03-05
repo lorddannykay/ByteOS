@@ -1,15 +1,15 @@
-# ByteOS — The Operating System for Learning
+# Sudar — The Operating System for Learning
 
 <p align="center">
   <strong>Learns with you, for you.</strong>
 </p>
 
 <p align="center">
-  An <strong>AI-native</strong>, <strong>evidence-informed</strong> learning platform that solves the biggest problems in learning today: <br/>
+  <strong>Sudar</strong> (formerly ByteOS) is an <strong>AI-native</strong>, <strong>evidence-informed</strong> learning platform that solves the biggest problems in learning today: <br/>
   <strong>static content</strong>, <strong>one course for all</strong>, and <strong>no memory of the learner</strong>.
 </p>
 
-### What makes ByteOS different
+### What makes Sudar different
 
 - **Sudar's longitudinal memory** — The AI tutor remembers struggles, preferences, and prior learning across sessions and courses; most "AI in LMS" is stateless.
 - **Adaptive paths** — Next-best-action, struggle detection from quizzes, and optional course reordering so each learner gets a path that fits.
@@ -21,13 +21,13 @@
 
 ## The problem (and why it matters)
 
-Most learning today is **static and one-size-fits-all**: the same course for every learner, no adaptation to prior knowledge or goals, and **no persistent memory of who the learner is**. Traditional LMSs track completions and scores but do not maintain a **longitudinal learner model** or offer **adaptive sequencing** and **AI tutoring with memory**. Research shows that adaptive instruction and intelligent tutoring consistently outperform fixed instruction (VanLehn, 2011; Aleven et al., 2016), yet **no widely used technology today combines learner memory, adaptive enhancement, and AI tutoring inside a single platform** that can also power — or integrate with — traditional LMS workflows. ByteOS is built to be that technology: **personalised, memory-aware, and adaptive**, so every learner gets an experience that learns with them.
+Most learning today is **static and one-size-fits-all**: the same course for every learner, no adaptation to prior knowledge or goals, and **no persistent memory of who the learner is**. Traditional LMSs track completions and scores but do not maintain a **longitudinal learner model** or offer **adaptive sequencing** and **AI tutoring with memory**. Research shows that adaptive instruction and intelligent tutoring consistently outperform fixed instruction (VanLehn, 2011; Aleven et al., 2016), yet **no widely used technology today combines learner memory, adaptive enhancement, and AI tutoring inside a single platform** that can also power — or integrate with — traditional LMS workflows. Sudar is built to be that technology: **personalised, memory-aware, and adaptive**, so every learner gets an experience that learns with them.
 
 ---
 
-## About ByteOS
+## About Sudar
 
-**ByteOS** is an open-source Learning Operating System built on principles from the **learning sciences** and **cognitive science**. It combines:
+**Sudar** is an open-source Learning Operating System built on principles from the **learning sciences** and **cognitive science**. It combines:
 
 - **AI-powered authoring** — Create courses from prompts or documents without armies of instructional designers.
 - **Adaptive delivery** — Content adapts to each learner’s goals, prior knowledge, and struggles.
@@ -37,13 +37,13 @@ Most learning today is **static and one-size-fits-all**: the same course for eve
 
 The platform is designed so that **learners** get a personalised, supportive experience, **L&D teams** can build and assign training quickly, and **organisations** can track outcomes and compliance — all without the cost of traditional enterprise authoring tools and LMSs.
 
-We are actively working on **bringing this same AI intelligence — learner memory and adaptive enhancement — into traditional LMS environments**, so that existing course catalogues and workflows can be personalised for every learner. There is no widely adopted technology that does this today; ByteOS is built to fill that gap and is backed by the research summarised in [RESEARCH_FOUNDATION.md](./RESEARCH_FOUNDATION.md).
+We are actively working on **bringing this same AI intelligence — learner memory and adaptive enhancement — into traditional LMS environments**, so that existing course catalogues and workflows can be personalised for every learner. There is no widely adopted technology that does this today; Sudar is built to fill that gap and is backed by the research summarised in [RESEARCH_FOUNDATION.md](./RESEARCH_FOUNDATION.md).
 
 ---
 
-## Origin: from ByteAI and ByteVerse to ByteOS
+## Origin: from ByteAI and ByteVerse to Sudar
 
-**ByteOS** was created by **Dhanikesh "Dhani" Karunanithi** as the culmination of the **ByteAI** and **ByteVerse** ecosystem — a long-running line of experiments and products in AI-powered learning and authoring. Over **hundreds of variants and versions** (authoring tools, LMS prototypes, AI tutors, modality switchers, and adaptive engines), the same vision kept surfacing: learning that **remembers the learner**, **adapts in real time**, and **delivers content in the modality that fits**. ByteOS is the unified system that brings that vision into one open platform: **Studio** (authoring and ops), **Learn** (learner experience), and **Intelligence** (adaptive engine and Sudar, the AI tutor). It stands on the lessons of ByteAI and ByteVerse while aiming to become the reference implementation for **memory-aware, adaptive learning** that the world can use, extend, and cite.
+**Sudar** (formerly ByteOS) was created by **Dhanikesh "Dhani" Karunanithi** as the culmination of the **ByteAI** and **ByteVerse** ecosystem — a long-running line of experiments and products in AI-powered learning and authoring. Over **hundreds of variants and versions** (authoring tools, LMS prototypes, AI tutors, modality switchers, and adaptive engines), the same vision kept surfacing: learning that **remembers the learner**, **adapts in real time**, and **delivers content in the modality that fits**. Sudar is the unified system that brings that vision into one open platform: **Studio** (authoring and ops), **Learn** (learner experience), and **Intelligence** (adaptive engine and the AI tutor). It stands on the lessons of ByteAI and ByteVerse while aiming to become the reference implementation for **memory-aware, adaptive learning** that the world can use, extend, and cite.
 
 ---
 
@@ -53,7 +53,7 @@ We maintain a **phase-wise development log** so every commit tells a clear story
 
 - **[UPDATES.md](./UPDATES.md)** — What we've built (Phases 1–4 complete; Phase 5 in progress: flashcards modality, document-to-course, SCORM 1.2 import), what's upcoming, and a **daily-update template** for end-of-day commits.
 
-**Why star this repo?** ByteOS is one of the few open-source platforms that combine **learner memory**, **adaptive sequencing**, and **AI tutoring** in a single stack — with a clear research foundation and a roadmap to bring this intelligence into traditional LMS workflows. Star and watch **UPDATES.md** to follow progress; we ship in phases and document each step.
+**Why star this repo?** Sudar is one of the few open-source platforms that combine **learner memory**, **adaptive sequencing**, and **AI tutoring** in a single stack — with a clear research foundation and a roadmap to bring this intelligence into traditional LMS workflows. Star and watch **UPDATES.md** to follow progress; we ship in phases and document each step.
 
 ---
 
@@ -65,17 +65,17 @@ Sudar, the AI tutor, uses **longitudinal memory**: it remembers what you've stru
 
 ## Screenshots
 
-Screenshots (Learn dashboard, course viewer with Sudar, Studio paths/compliance) are in **[docs/screenshots/](./docs/screenshots/)**. Adding 2–4 screenshots there improves contributor and user confidence that ByteOS is building, not just planning.
+Screenshots (Learn dashboard, course viewer with Sudar, Studio paths/compliance) are in **[docs/screenshots/](./docs/screenshots/)**. Adding 2–4 screenshots there improves contributor and user confidence that Sudar is building, not just planning.
 
 ---
 
 ## Research Foundation
 
-ByteOS is grounded in established research on **adaptive instruction**, **multimodal learning**, **intelligent tutoring**, **formative assessment**, and **learner modelling**. For a concise account of the evidence base and design choices, see:
+Sudar is grounded in established research on **adaptive instruction**, **multimodal learning**, **intelligent tutoring**, **formative assessment**, and **learner modelling**. For a concise account of the evidence base and design choices, see:
 
 - **[RESEARCH_FOUNDATION.md](./RESEARCH_FOUNDATION.md)** — Learning sciences alignment, references, and suggested citation.
 
-We encourage use and extension of ByteOS in **academic and applied research** and ask that you cite the repository when you do.
+We encourage use and extension of Sudar in **academic and applied research** and ask that you cite the repository when you do.
 
 ---
 
@@ -83,16 +83,16 @@ We encourage use and extension of ByteOS in **academic and applied research** an
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         B Y T E O S                             │
+│                          S U D A R                              │
 ├────────────────────────────┬────────────────────────────────────┤
-│   ByteOS Studio (:3000)    │   ByteOS Learn (:3001)             │
+│   Sudar Studio (:3000)     │   Sudar Learn (:3001)              │
 │   Admin / authoring        │   Learner delivery                  │
 │   Next.js 14, TypeScript   │   Next.js 14, TypeScript            │
 ├────────────────────────────┴────────────────────────────────────┤
 │   Supabase (PostgreSQL, Auth, Storage) — single source of truth  │
 ├─────────────────────────────────────────────────────────────────┤
-│   ByteOS Intelligence (:8000) — Python FastAPI                  │
-│   Adaptive engine, AI tutor, next-best-action                   │
+│   Sudar Intelligence (:8000) — Python FastAPI                   │
+│   Adaptive engine, AI tutor, next-best-action                    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -105,7 +105,7 @@ We encourage use and extension of ByteOS in **academic and applied research** an
 ## Project Structure
 
 ```
-ByteOS/
+Sudar/
 ├── README.md                 ← You are here
 ├── RESEARCH_FOUNDATION.md    ← Learning sciences & citation
 ├── ECOSYSTEM.md              ← Master architecture (for contributors & AI agents)
@@ -137,8 +137,8 @@ ByteOS/
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/lorddannykay/ByteOS.git
-cd ByteOS
+git clone https://github.com/Dhanikesh-Karunanithi/Sudar.git
+cd Sudar
 ```
 
 ### 2. Supabase
@@ -147,7 +147,7 @@ cd ByteOS
 2. In the SQL Editor, run the schema/migrations from your Prisma schema or the SQL provided in `ECOSYSTEM.md` (and any triggers/policies as documented).
 3. Note your project URL, anon key, and service role key.
 
-### 3. ByteOS Studio (admin)
+### 3. Sudar Studio (admin)
 
 ```bash
 cd byteos-studio
@@ -160,7 +160,7 @@ npm run dev
 
 → **http://localhost:3000**
 
-### 4. ByteOS Learn (learner)
+### 4. Sudar Learn (learner)
 
 ```bash
 cd byteos-learn
@@ -172,7 +172,7 @@ npm run dev
 
 → **http://localhost:3001**
 
-### 5. (Optional) ByteOS Intelligence
+### 5. (Optional) Sudar Intelligence
 
 ```bash
 cd byteos-intelligence
@@ -214,7 +214,7 @@ See [docs/PRODUCT_FEATURES.md](./docs/PRODUCT_FEATURES.md) for the full specific
 |----------|---------|
 | [UPDATES.md](./UPDATES.md) | **Phase-wise build log & upcoming** — updated as we ship; use for daily commits. |
 | [ECOSYSTEM.md](./ECOSYSTEM.md) | Architecture, schema, phases — **read first** when contributing. |
-| [RESEARCH_FOUNDATION.md](./RESEARCH_FOUNDATION.md) | Learning sciences, evidence base, the gap ByteOS fills, citation. |
+| [RESEARCH_FOUNDATION.md](./RESEARCH_FOUNDATION.md) | Learning sciences, evidence base, the gap Sudar fills, citation. |
 | [AGENTS.md](./AGENTS.md) | Instructions for AI coding agents. |
 | [docs/STRATEGIC_PATH.md](./docs/STRATEGIC_PATH.md) | Vision alignment and roadmap. |
 | [PROGRESS.md](./PROGRESS.md) | Next 3 outcomes and quick context for contributors/agents. |
@@ -237,21 +237,21 @@ We welcome contributions that align with the project’s goal: **democratising h
 
 ## License
 
-ByteOS is released under the **MIT License**. See [LICENSE](./LICENSE).
+Sudar is released under the **MIT License**. See [LICENSE](./LICENSE).
 
 ---
 
 ## Citation
 
-If you use ByteOS in research or derivative work, please cite the repository and the research foundation:
+If you use Sudar in research or derivative work, please cite the repository and the research foundation:
 
 ```bibtex
-@software{byteos2026,
-  author       = {Karunanithi, Dhanikesh and ByteOS Contributors},
-  title        = {ByteOS: An AI-Native Learning Operating System},
+@software{sudar2026,
+  author       = {Karunanithi, Dhanikesh and Sudar Contributors},
+  title        = {Sudar: An AI-Native Learning Operating System},
   year         = {2026},
-  url          = {https://github.com/lorddannykay/ByteOS},
-  note         = {Evidence-informed adaptive learning platform with learner memory and adaptive enhancement. Creator: Dhanikesh `Dhani' Karunanithi. Research foundation: RESEARCH_FOUNDATION.md}
+  url          = {https://github.com/Dhanikesh-Karunanithi/Sudar},
+  note         = {Evidence-informed adaptive learning platform with learner memory and adaptive enhancement. Formerly ByteOS. Creator: Dhanikesh `Dhani' Karunanithi. Research foundation: RESEARCH_FOUNDATION.md}
 }
 ```
 
@@ -259,12 +259,12 @@ If you use ByteOS in research or derivative work, please cite the repository and
 
 ## Creator & ecosystem
 
-**Dhanikesh "Dhani" Karunanithi** is the creator of ByteOS and the ByteAI/ByteVerse ecosystem. ByteOS is the unified Learning Operating System that emerged from years of iteration across authoring tools, LMS prototypes, and AI tutors — so the world can benefit from **learning that learns with you, for you**.
+**Dhanikesh "Dhani" Karunanithi** is the creator of Sudar and the ByteAI/ByteVerse ecosystem. Sudar is the unified Learning Operating System that emerged from years of iteration across authoring tools, LMS prototypes, and AI tutors — so the world can benefit from **learning that learns with you, for you**.
 
 ---
 
 <p align="center">
-  <strong>ByteOS</strong> — Learns with you, for you.
+  <strong>Sudar</strong> — Learns with you, for you.
 </p>
 
 <p align="center">
