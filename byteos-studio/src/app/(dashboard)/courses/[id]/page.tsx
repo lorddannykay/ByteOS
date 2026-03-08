@@ -6,13 +6,14 @@ import Link from 'next/link'
 import {
   ArrowLeft, Plus, Trash2, GripVertical, Globe, FileText,
   ChevronDown, ChevronUp, Loader2, CheckCircle2, Sparkles, Wand2, LayoutList, Zap,
-  CircleHelp, RefreshCcw, Eye, Timer
+  CircleHelp, RefreshCcw, Eye, Timer, Palette
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSidebarContent } from '@/contexts/SidebarContentContext'
 import { ContentToolsPanel } from '@/components/content/ContentToolsPanel'
 import { ModuleBlockEditor } from '@/components/content/ModuleBlockEditor'
 import { getModuleBodyText } from '@/lib/contentBlocks'
+import { LEARNING_PERSONAS, type LearningPersonaSlug } from '@/lib/themes/learningPersonas'
 import type { ModuleContent } from '@/types/content'
 
 interface QuizQuestion {
@@ -40,6 +41,7 @@ interface Course {
   difficulty: string | null
   estimated_duration_mins: number | null
   is_adaptive: boolean
+  template?: string | null
   settings?: {
     module_completion?: Record<string, { type: 'mark_button' | 'min_time'; min_time_secs?: number }>
   } | null
@@ -504,6 +506,62 @@ export default function CourseEditorPage() {
             </div>
           </button>
         </div>
+
+        {/* Visual Persona (course theme) */}
+        <div className="border-t border-slate-800 pt-4 mt-2">
+          <div className="flex items-center gap-2 mb-3">
+            <Palette className="w-4 h-4 text-slate-500 shrink-0" />
+            <span className="text-xs font-medium text-slate-400">Visual persona</span>
+          </div>
+          <p className="text-[10px] text-slate-600 mb-3">
+            Choose how this course looks to learners. Affects typography, colors, and card style in Sudar Learn.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => saveCourse({ template: null })}
+              className={cn(
+                'flex flex-col items-start gap-1.5 p-3 rounded-xl border text-left transition-all',
+                !course.template
+                  ? 'bg-slate-700 border-slate-500 ring-1 ring-slate-400'
+                  : 'bg-slate-800/60 border-slate-700 hover:border-slate-600'
+              )}
+            >
+              <div className="w-full h-8 rounded border border-slate-600 bg-slate-900 flex items-center justify-center">
+                <span className="text-[10px] text-slate-500">Default</span>
+              </div>
+              <span className="text-xs font-medium text-slate-300">Platform default</span>
+            </button>
+            {(Object.keys(LEARNING_PERSONAS) as LearningPersonaSlug[]).map((slug) => {
+              const p = LEARNING_PERSONAS[slug]
+              const selected = course.template === slug
+              return (
+                <button
+                  key={slug}
+                  type="button"
+                  onClick={() => saveCourse({ template: slug })}
+                  className={cn(
+                    'flex flex-col items-start gap-1.5 p-3 rounded-xl border text-left transition-all',
+                    selected ? 'ring-1 ring-indigo-400 border-indigo-500/50 bg-indigo-950/30' : 'bg-slate-800/60 border-slate-700 hover:border-slate-600'
+                  )}
+                >
+                  <div
+                    className="w-full h-8 rounded border flex items-center justify-center text-[10px] font-medium"
+                    style={{
+                      backgroundColor: p.colorBackground,
+                      color: p.colorForeground,
+                      borderColor: p.borderColor,
+                    }}
+                  >
+                    {p.label}
+                  </div>
+                  <span className="text-xs font-medium text-slate-300">{p.label}</span>
+                  <span className="text-[10px] text-slate-500 line-clamp-1">{p.bestFor[0]}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Modules */}
@@ -653,27 +711,54 @@ export default function CourseEditorPage() {
                   </div>
                 )}
 
-                {/* Content: block editor with main text + blocks */}
-                <div className="relative">
-                  {generatingModule === mod.id && (
-                    <div className="absolute inset-0 bg-slate-900/80 rounded-lg flex items-center justify-center z-10">
-                      <div className="flex items-center gap-2 text-violet-300 text-sm">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Writing module content...
-                      </div>
+                {/* Content: SCORM placeholder or block editor */}
+                {(mod.content as { type?: string })?.type === 'scorm' ? (
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-950/20 p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold px-2 py-0.5 bg-amber-500/15 text-amber-400 border border-amber-500/20 rounded-full">SCORM module</span>
                     </div>
-                  )}
-                  <ModuleBlockEditor
-                    key={mod.id}
-                    content={mod.content}
-                    disabled={generatingModule === mod.id}
-                    placeholder="Write your module content here, or use 'Generate with AI' above and add blocks below..."
-                    onContentChange={(content) => saveModule(mod.id, { content })}
-                    courseId={id}
-                  />
-                </div>
+                    <p className="text-xs text-slate-400">
+                      This module is a SCORM SCO hosted in Supabase Storage. Learners experience it as an interactive iframe. You can edit the title above; the SCORM content itself is read-only here.
+                    </p>
+                    {(() => {
+                      const raw = (mod.content as { launch_url?: string }).launch_url ?? ''
+                      const url = raw.startsWith('http')
+                        ? (() => { const m = raw.match(/\/course-media\/(.+)$/); return m ? `/api/scorm/${m[1]}` : raw })()
+                        : raw ? `/api/scorm/${raw}` : '#'
+                      return (
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 underline underline-offset-2"
+                        >
+                          Open launch file ↗
+                        </a>
+                      )
+                    })()}
+                  </div>
+                ) : (
+                  <div className="relative">
+                    {generatingModule === mod.id && (
+                      <div className="absolute inset-0 bg-slate-900/80 rounded-lg flex items-center justify-center z-10">
+                        <div className="flex items-center gap-2 text-violet-300 text-sm">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Writing module content...
+                        </div>
+                      </div>
+                    )}
+                    <ModuleBlockEditor
+                      key={mod.id}
+                      content={mod.content}
+                      disabled={generatingModule === mod.id}
+                      placeholder="Write your module content here, or use 'Generate with AI' above and add blocks below..."
+                      onContentChange={(content) => saveModule(mod.id, { content })}
+                      courseId={id}
+                    />
+                  </div>
+                )}
 
-                {getModuleBodyText(mod.content) && (
+                {(mod.content as { type?: string })?.type !== 'scorm' && getModuleBodyText(mod.content) && (
                   <p className="text-xs text-slate-600 text-right">
                     {getModuleBodyText(mod.content).split(/\s+/).filter(Boolean).length} words
                   </p>

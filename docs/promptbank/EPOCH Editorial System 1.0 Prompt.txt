@@ -1,0 +1,63 @@
+# Summary
+
+A dark-mode editorial system that treats software as a physical tool, featuring massive serif headlines, technical metadata annotations, a gritty grain overlay, and a striking '#DFFF00' acid accent.
+
+# Style
+
+The style is 'Brutalist Editorial.' It utilizes a strict color palette: Void (#000000), Paper (#FFFFFF), and Acid (#DFFF00). Typography pairings focus on high-contrast extremes: a bold, variable serif (Fraunces) with tight tracking for headlines, and a clean sans (Inter) with ultra-wide tracking (0.3em) for technical labels. Visual effects include a persistent 5% opacity noise/grain overlay, a grid background (40px cells), and scanline animations to mimic high-performance interfaces.
+
+## Spec
+
+Create a design with a background of #000000 and a subtle grid pattern (1px stroke at 5% opacity, 40px grid). Apply a fixed noise overlay at 5% opacity for a film-grain texture. Typography: Use 'Fraunces' (weights 100-900) for headlines with 'tracking-tighter' (-0.08em); use 'Inter' for UI elements and metadata with 'tracking-widest' (0.3em) and uppercase. Accent color: #DFFF00 (Acid Lime). Key visual elements: thin 1px borders, text-stroke effects (transparent fill with #FFFFFF 40% opacity stroke), and mix-blend-mode: exclusion for large text. Animation: Use 'reveal-up' transitions (cubic-bezier(0.16, 1, 0.3, 1)) and a vertical scanline animation across the hero section.
+
+# Layout & Structure
+
+A vertical-scrolling editorial layout featuring massive typographic hero blocks, sticky utility bars, and a high-contrast inverted section for core values.
+
+## Navigation & Metadata
+
+Fixed top navigation with pointer-events-none container. Left side: pulsing #DFFF00 dot next to 'SYSTEM ONLINE' label (10px, 0.3em tracking). Right side: 'Manifesto' link with underlined decoration #DFFF00 at 30% opacity. Include building version metadata in #DFFF00 sans-serif.
+
+## Hero Section
+
+Large-scale typographic stack using Fraunces. Headline 1: 'Construct' (12vw, uppercase). Headline 2: 'The Future' (12vw, italic, #DFFF00) preceded by a horizontal 1px line that expands on load. Headline 3: A large numerical stroke text '001' next to 'Yourself'. Bottom left: technical subtitle with 1px border-left and #DFFF00 accent text. Bottom right: 'Scroll to Breach' indicator with a bouncing chevron.
+
+## Sticky Status Bar
+
+A 70px tall sticky bar with #000000 background at 80% blur. Divide into sections with 1px white/10 vertical lines. Left: Release info. Middle: Access protocol with pulse icon. Right: Latency metadata and a #DFFF00 CTA button. The bar should have a 2px #DFFF00 bottom border that animates its width on entrance.
+
+## Editorial Manifesto
+
+Two-column grid (5:7 ratio). Left: Sticky title 'Death to Standardized Thinking' with mono-font system status codes. Right: Large serif body text (4xl) where keywords are highlighted in #DFFF00. Include a blockquote with a 1px border-left in #DFFF00 and large quote icons.
+
+## System Specs Grid
+
+Three-column grid with 1px #FFFFFF/10 borders separating cells. Each cell features: a technical module ID (e.g., MOD.01) in #DFFF00, a serif title that turns #DFFF00 on hover, and a description with 60% opacity. Micro-interaction: background shifts to 2% white on hover.
+
+## Inverted Creed Section
+
+Full-width section with #DFFF00 background and #000000 text. Large-scale vertical list of 'Commandments' (72px serif, uppercase). Numbers should be small-caps sans. Hover effect: text shifts horizontally +1rem.
+
+## Footer & Call to Action
+
+Inverted hero style. Headline: 'Seize the Moment' in stroke-text serif. Background contains two massive concentric 1px circles. CTA: 'Request Access' in 6xl italic serif that scales up on hover, accompanied by a large arrow-right-circle icon.
+
+# Special Components
+
+## Reveal Wrapper
+
+A container that masks content and reveals it with a smooth upward slide.
+
+Container with overflow: hidden. Child element starts at transform: translateY(115%). On parent class '.in-view', child transitions to translateY(0) with cubic-bezier(0.16, 1, 0.3, 1) over 1.4s. Use incremental delays (100ms, 200ms) for sequenced text lines.
+
+## Scanline Overlay
+
+CRT-style vertical light bar that scans the screen.
+
+Absolute positioned div, full width/height. Background: linear-gradient(to bottom, transparent, rgba(223, 255, 0, 0.03), transparent). Animation: Move from translateY(-100%) to translateY(100%) over 8s linear, infinite.
+
+## Acid Button
+
+Aggressive, high-contrast action button.
+
+Background: #DFFF00; Color: #000000; Padding: 12px 32px; Font: Inter Bold, 11px, 0.3em tracking. Hover state: increase right-padding, reveal a hidden Lucide arrow icon, and shift translate-x for the icon.

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import "./course-personas.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
 const geistSans = localFont({
@@ -15,7 +16,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "ByteOS Learn",
+  title: "Sudar Learn",
   description: "Your personalized AI-powered learning experience.",
 };
 

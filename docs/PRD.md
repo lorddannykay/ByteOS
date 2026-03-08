@@ -1,4 +1,4 @@
-# ByteOS — Product Requirements Document (PRD)
+# Sudar — Product Requirements Document (PRD)
 **Version**: 1.0 | **Date**: February 2026 | **Status**: Active
 **Owner**: Dhani (Project Lead)
 **Tagline**: *Learns with you, for you.*
@@ -7,7 +7,7 @@
 
 ## 1. Executive Summary
 
-ByteOS is an AI-native Learning Operating System that democratizes high-quality, personalized
+Sudar is an AI-native Learning Operating System that democratizes high-quality, personalized
 education for organizations worldwide. It replaces the fragmented ecosystem of expensive authoring
 tools (Rise360, Articulate Storyline, Adobe Captivate) and legacy LMS platforms (Moodle, Cornerstone)
 with a single, intelligent platform that:
@@ -111,21 +111,21 @@ No single platform currently offers:
 
 ## 5. Product Overview
 
-### 5.1 ByteOS Studio (Admin Surface)
+### 5.1 Sudar Studio (Admin Surface)
 
 The authoring and management platform for L&D teams and content creators.
 
 **Core Flows**:
 1. **AI Course Builder**: Upload any source (PDF, DOCX, URL, text prompt) → AI generates a
    complete, structured course with sections, quizzes, and media → Admin reviews and edits
-   → Publishes to ByteOS Learn
+   → Publishes to Sudar Learn
 2. **Slide Mode**: Create presentation-style course slides with AI-generated content and images
 3. **Learning Path Builder**: Sequence multiple courses into learning journeys and assign to teams
 4. **Analytics Dashboard**: View completion rates, skill gaps, engagement by modality,
    drop-off analysis, compliance status
 5. **Organisation Settings**: White-label config, member management, HRIS sync hooks, branding
 
-### 5.2 ByteOS Learn (Learner Surface)
+### 5.2 Sudar Learn (Learner Surface)
 
 The personalized learning experience for every learner.
 
@@ -134,11 +134,11 @@ The personalized learning experience for every learner.
 2. **Personalized Dashboard**: AI-curated "what's next" based on Digital Learner Twin
 3. **Course Experience**: Multi-modality content consumption with Sudar (AI tutor) always available
 4. **Modality Switching**: Learner or AI switches between Text / Video / Audio / MindMap /
-   Flashcards / ByteFeed / BytePlay at any point
+   Flashcards / SudarFeed / SudarPlay at any point
 5. **AI Tutor "Sudar"**: Reactive Q&A, proactive nudges, longitudinal memory across all sessions
 6. **Progress & Achievements**: Skill graph, streak tracking, certifications
 
-### 5.3 ByteOS Intelligence (AI Engine)
+### 5.3 Sudar Intelligence (AI Engine)
 
 The backend AI layer that powers all adaptation and generation.
 
@@ -153,7 +153,7 @@ The backend AI layer that powers all adaptation and generation.
 
 ## 6. Functional Requirements
 
-### 6.1 ByteOS Studio
+### 6.1 Sudar Studio
 
 #### Course Creation
 - FR-ST-001: System SHALL accept PDF, DOCX, TXT, URL, and plain text as course source inputs
@@ -199,7 +199,7 @@ The backend AI layer that powers all adaptation and generation.
 - FR-ST-027: Admin SHALL be able to configure organization branding (logo, colors)
 - FR-ST-028: System SHALL support multiple organizations (multi-tenancy) with data isolation
 
-### 6.2 ByteOS Learn
+### 6.2 Sudar Learn
 
 #### Onboarding
 - FR-LN-001: New learner SHALL complete a 5-question onboarding assessment capturing:
@@ -246,7 +246,7 @@ The backend AI layer that powers all adaptation and generation.
 - FR-LN-031: System SHALL maintain and display a learning streak counter
 - FR-LN-032: Learner SHALL see their skill progress over time on their profile page
 
-### 6.3 ByteOS Intelligence
+### 6.3 Sudar Intelligence
 
 - FR-AI-001: Adaptive engine SHALL update `learner_profiles.modality_scores` after each session
   based on engagement data from `learning_events`
@@ -304,7 +304,7 @@ The following are explicitly out of scope for the initial build:
 | Edge-TTS | Library | Text-to-speech for audio/video | OpenAI TTS |
 | FFmpeg | Binary | Video assembly | — |
 | Remotion | Library | Programmatic video rendering | bytetexttovid |
-| Phaser.js | Library | Game engine for BytePlay | — |
+| Phaser.js | Library | Game engine for SudarPlay | — |
 
 ---
 
@@ -315,7 +315,7 @@ The following are explicitly out of scope for the initial build:
 | AI provider outage | Medium | High | Multi-provider fallback chain |
 | High AI costs | High | Medium | Rate limiting, caching, model tiering |
 | Video generation too slow | Medium | High | Async generation, progress indicator |
-| Low learner engagement | Medium | High | ByteFeed + BytePlay modalities drive engagement |
+| Low learner engagement | Medium | High | SudarFeed + SudarPlay modalities drive engagement |
 | Complex onboarding | Medium | Medium | 5-step max onboarding, skip option available |
 | Solo builder bandwidth | High | High | Phase-based build — ship Phase 1 first |
 
@@ -334,4 +334,4 @@ The following are explicitly out of scope for the initial build:
 
 ---
 
-*ByteOS PRD v1.0 | February 2026 | "Learns with you, for you."*
+*Sudar PRD v1.0 | February 2026 | "Learns with you, for you."*

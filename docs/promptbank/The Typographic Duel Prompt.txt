@@ -1,0 +1,57 @@
+# Summary
+
+A split-screen design system that pits two opposing philosophies against each other through extreme typographic contrast, staggered vertical rhythms, and a fixed center divider that acts as a visual tension line.
+
+# Style
+
+The style is built on the concept of 'Narrative Friction.' It contrasts an organic, artist-led aesthetic (warm paper tones, expressive serif) with a cold, engineer-led aesthetic (charcoal tones, monospace). The interface avoids gradients and shadows, opting for raw, graphic-driven hierarchy. Motion is directional: elements slide from their respective sides toward the center upon intersection.
+
+## Spec
+
+Create a design system based on 'The Typographic Duel'. **Color Palette**: Side A (Left) uses #F5F2EB background with #0a0a0a text; Side B (Right) uses #0F0F0F background with #E0E0E0 text. Use #FF3D00 as the sole accent color for the divider and highlight elements. **Typography**: Define 'Expressive' as font-family 'Cinzel' or similar high-contrast serif for Side A. Define 'Utilitarian' as font-family 'Space Mono' or similar fixed-width font for Side B. Define 'UI' as 'Inter' or a clean sans-serif for navigation. **Motion**: All reveal animations use 'cubic-bezier(0.16, 1, 0.3, 1)' over 1 second. Left-side elements translate from -50px to 0; Right-side elements translate from 50px to 0. **Borders**: Avoid traditional borders; use the #FF3D00 center line (2px wide) and occasional 1px solid dividers in #ddd (Light side) or #222 (Dark side) to separate vertical sections.
+
+# Layout & Structure
+
+A vertical-scrolling, permanent split-screen layout where the center axis remains fixed. Content is often staggered vertically to create an intentional imbalance, forcing the eye to zigzag across the tension line.
+
+## Navigation
+
+Fixed floating navigation at the top. Use 'mix-blend-difference' so text remains visible against both backgrounds. Use font-utilitarian, 12px, uppercase with 0.3em letter spacing.
+
+## Hero Standoff
+
+Full-screen 50/50 split. Left side: Side A styling, massive 128px serif title, line-height 0.85, text-align left. Right side: Side B styling, 96px monospace title, line-height 0.9, text-align right. Subtitles should appear below the titles with a 100ms stagger delay.
+
+## Staggered Workflow
+
+Two-column grid where content blocks on the Left and Right are offset. For example, Section 1 on the left is at 'top:0', while Section 1 on the right starts with a 160px top margin. Each block starts with a large numeric indicator (64px) in the accent color #FF3D00.
+
+## Outcome Statements
+
+Side-by-side comparison of results. Left side uses large declarative serif sentences (36px). Right side uses monospace list items with a 2px solid left-border in #FF3D00 and 24px padding-left.
+
+## The Choice Moment
+
+Break the split-screen layout with a full-width section using the accent color #FF3D00. Add a subtle noise texture (10% opacity). Center a single, powerful quote in expressive typography (72px) to force a mental pivot.
+
+## Final Alignment CTAs
+
+Two distinct CTA blocks. CTA A (Left): Text-link style with a 2px border-bottom and serif italics. CTA B (Right): Boxed button with 1px border (#333) that fills with #FF3D00 on hover, using monospace uppercase text.
+
+# Special Components
+
+## Animated Tension Line
+
+A fixed 2px vertical divider that acts as the focal point of the page.
+
+A div with 'position: fixed', 'left: 50%', 'width: 2px', 'height: 100vh', and 'background-color: #FF3D00'. Add an inner child div with a 'pulse-height' animation (4s ease-in-out infinite) that varies height from 100% to 90% and opacity from 0.8 to 0.4 to simulate a 'living' energetic pulse.
+
+## Psychographic Cards
+
+Minimalist sections focusing on the 'Who' rather than the 'How'.
+
+Left side cards use 48px serif headers and 18px serif body text with wide line-height (1.6). Right side cards use 32px monospace headers and 14px monospace body text with 2.0 line-height to create high density. No card backgrounds—use the page background to maintain the minimalist 'exhibition' look.
+
+# Special Notes
+
+MUST: Maintain the 50/50 split at all times on desktop. MUST: Use the center accent line as a constant anchor. MUST: Invert text colors strictly between the two sides. DO NOT: Use gradients, drop shadows, or rounded corners. DO NOT: Use traditional comparison tables; the 'duel' must be narrative. DO NOT: Mix the typography (Cinzel stays on the left, Space Mono on the right).

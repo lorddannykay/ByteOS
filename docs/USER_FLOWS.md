@@ -1,17 +1,17 @@
-# ByteOS — User Flows & Learner Lifecycle
+# Sudar — User Flows & Learner Lifecycle
 **Version**: 1.0 | **February 2026**
 
 ---
 
 ## Overview
 
-This document defines every critical user flow within ByteOS across both surfaces (Studio + Learn),
+This document defines every critical user flow within Sudar across both surfaces (Studio + Learn),
 plus the end-to-end learner lifecycle from signup to mastery. These flows are the source of truth
 for UX design, frontend routing, and API design.
 
 ---
 
-## SECTION 1: Admin / Creator Flows (ByteOS Studio)
+## SECTION 1: Admin / Creator Flows (Sudar Studio)
 
 ---
 
@@ -99,7 +99,7 @@ for UX design, frontend routing, and API design.
        ├── Search for learners or teams
        ├── Set due date (optional)
        └── Click "Assign"
-    → Enrolled learners receive notification in ByteOS Learn
+    → Enrolled learners receive notification in Sudar Learn
 ```
 
 **Supabase writes**: `learning_paths`, `enrollments`
@@ -136,19 +136,19 @@ for UX design, frontend routing, and API design.
 
 ---
 
-## SECTION 2: Learner Flows (ByteOS Learn)
+## SECTION 2: Learner Flows (Sudar Learn)
 
 ---
 
 ### Flow L1: Learner Onboarding (First-Time Experience)
 
 ```
-[ByteOS Learn — First Visit or Invite Link]
+[Sudar Learn — First Visit or Invite Link]
     → [Sign Up / Login]
        ├── Email + password
        ├── Google OAuth
        └── If invited by org: click invite link → auto-join org
-    → [Welcome to ByteOS Learn screen]
+    → [Welcome to Sudar Learn screen]
        "Let's help Sudar learn how you learn best."
     → [Onboarding Assessment — 5 Questions]
        Q1: "How do you usually learn best?"
@@ -180,7 +180,7 @@ for UX design, frontend routing, and API design.
 ### Flow L2: Learner Dashboard (Returning User)
 
 ```
-[ByteOS Learn — Dashboard]
+[Sudar Learn — Dashboard]
     ├── Top row:
     │   ├── "Continue where you left off" — last active module with progress
     │   ├── Learning streak: X days 🔥
@@ -208,8 +208,8 @@ for UX design, frontend routing, and API design.
        ├── Audio
        ├── MindMap
        ├── Flashcards
-       ├── ByteFeed
-       └── BytePlay
+       ├── SudarFeed
+       └── SudarPlay
        "Sudar will suggest the best format based on how you learn."
        → Confirm / Let Sudar choose
     → [Module Loads in selected modality]
@@ -322,7 +322,7 @@ WEEK 1 — First Course Experience
 
 WEEKS 2–4 — Pattern Establishment
 │
-├── ByteOS Learn starts learning the learner:
+├── Sudar Learn starts learning the learner:
 │   - Detects time-of-day patterns (Daniel learns at 7am in the car)
 │   - Identifies modality affinity (Marcus loves video + game)
 │   - Finds knowledge gaps (Amara struggles with data concepts)
@@ -333,11 +333,11 @@ WEEKS 2–4 — Pattern Establishment
 MONTH 2 — Deepening Engagement
 │
 ├── Learner is now 3–5 courses in
-├── ByteMind mindmap shows connected knowledge graph
+├── SudarMind mindmap shows connected knowledge graph
 ├── Sudar remembers: "Last time you asked about X — here's how it connects to today's topic"
 ├── Next Best Action gets highly accurate (based on 20+ sessions of data)
 ├── Skills graph shows measurable progress
-└── Second certificate earned → shared on LinkedIn → new learners discover ByteOS
+└── Second certificate earned → shared on LinkedIn → new learners discover Sudar
 
 MONTH 3–6 — Mastery & Achievement
 │
@@ -353,7 +353,7 @@ ONGOING — The Compounding Effect
 ├── Every new course is immediately personalized from session 1
 ├── Sudar knows: preferred modality, optimal session length, time-of-day, knowledge gaps
 ├── Learner can't imagine using a platform that doesn't know them
-└── Switching cost is the data — the longer you use ByteOS, the more personal it gets
+└── Switching cost is the data — the longer you use Sudar, the more personal it gets
 ```
 
 ---
@@ -436,4 +436,4 @@ ONGOING — The Compounding Effect
 
 ---
 
-*ByteOS User Flows v1.0 | February 2026 | "Learns with you, for you."*
+*Sudar User Flows v1.0 | February 2026 | "Learns with you, for you."*

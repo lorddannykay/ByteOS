@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle2 } from 'lucide-react'
 
@@ -75,13 +74,14 @@ export default function SignupPage() {
         {/* Logo */}
         <div className="text-center space-y-3">
           <div className="relative w-16 h-16 mx-auto">
-            <Image
-              src="/sudar-logo.png"
-              alt="Sudar"
-              fill
-              className="object-contain"
-              sizes="64px"
-              priority
+            <span className="sr-only">Sudar</span>
+            <div
+              className="absolute inset-0 bg-primary block dark:hidden logo-mask-light"
+              aria-hidden
+            />
+            <div
+              className="absolute inset-0 bg-primary hidden dark:block logo-mask-dark"
+              aria-hidden
             />
           </div>
           <div>
@@ -167,7 +167,7 @@ export default function SignupPage() {
         </div>
 
         <p className="text-center text-slate-400 text-xs">
-          © 2026 ByteOS · Learns with you, for you.
+          © 2026 Sudar · Learns with you, for you.
         </p>
       </div>
     </div>

@@ -5,7 +5,7 @@ This folder contains the scientific paper draft and submission materials for the
 ## Paper
 
 - **Title:** From Course Hosting to Adaptive Learning: An AI-Native Platform and Plugin Architecture for Learner Memory and Multimodal Delivery  
-- **Technology name in paper:** Adaptive Learning Layer (ALP) for the plugin architecture; reference implementation: ByteOS (see footnote/acknowledgments).  
+- **Technology name in paper:** Adaptive Learning Layer (ALP) for the plugin architecture; reference implementation: Sudar (repository: ByteOS; see footnote/acknowledgments).  
 - **File:** [paper.tex](paper.tex) — LaTeX source (two-column, ~8–10 pages).  
 - **References:** [references.bib](references.bib) — BibTeX.
 

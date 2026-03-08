@@ -1,6 +1,6 @@
-# Contributing to ByteOS
+# Contributing to Sudar
 
-Thank you for your interest in ByteOS. We aim to keep the project aligned with **evidence-informed learning** and **democratising high-quality education**.
+Thank you for your interest in Sudar. We aim to keep the project aligned with **evidence-informed learning** and **democratising high-quality education**.
 
 ## Before You Start
 
@@ -29,4 +29,4 @@ By contributing, you agree that your contributions will be licensed under the [M
 
 ---
 
-*ByteOS — Learns with you, for you.*
+*Sudar — Learns with you, for you.*

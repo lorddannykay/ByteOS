@@ -5,6 +5,7 @@ import { ArrowLeft, Route, BookOpen, Lock, Zap, Award, CheckCircle2, LockKeyhole
 import { cn } from '@/lib/utils'
 import { PathEnrollButton } from './PathEnrollButton'
 import { BentoCard } from '@/components/ui/BentoCard'
+import { PathNodeGraph } from '@/components/paths/PathNodeGraph'
 
 interface PathCourse {
   course_id: string
@@ -64,6 +65,21 @@ export default async function LearnPathDetailPage({ params }: { params: { id: st
   const mandatoryCompleted = displayCourses.filter((c) => c.is_mandatory).every(
     (c) => courseStatusMap[c.course_id]?.status === 'completed'
   )
+
+  // Node status for PathNodeGraph: completed | current (next to do or in progress) | locked
+  const nodeStatus: Record<string, 'completed' | 'current' | 'locked'> = {}
+  let seenCurrent = false
+  for (const c of displayCourses) {
+    const cs = courseStatusMap[c.course_id]
+    if (cs?.status === 'completed') {
+      nodeStatus[c.course_id] = 'completed'
+    } else if (!seenCurrent && enrollment) {
+      nodeStatus[c.course_id] = 'current'
+      seenCurrent = true
+    } else {
+      nodeStatus[c.course_id] = 'locked'
+    }
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -138,6 +154,11 @@ export default async function LearnPathDetailPage({ params }: { params: { id: st
           <PathEnrollButton pathId={params.id} />
         ) : null}
       </BentoCard>
+
+      {/* Path node graph */}
+      {enrollment && displayCourses.length > 0 && (
+        <PathNodeGraph nodes={displayCourses} statusByCourseId={nodeStatus} />
+      )}
 
       {/* Course sequence */}
       <div className="space-y-3">

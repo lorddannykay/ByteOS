@@ -54,3 +54,34 @@ export async function getOrCreateOrg(userId: string): Promise<string> {
 
   return org.id
 }
+
+export type OrgRole = 'ADMIN' | 'MANAGER' | 'CREATOR' | 'LEARNER'
+
+/**
+ * Returns org_id and the current user's role in that org.
+ * Use after getOrCreateOrg so membership exists.
+ */
+export async function getOrgIdAndRole(userId: string): Promise<{ orgId: string; role: OrgRole }> {
+  const supabase = await createClient()
+  const orgId = await getOrCreateOrg(userId)
+  const { data: membership } = await supabase
+    .from('org_members')
+    .select('role')
+    .eq('org_id', orgId)
+    .eq('user_id', userId)
+    .single()
+  const role = (membership?.role ?? 'LEARNER') as OrgRole
+  return { orgId, role }
+}
+
+/**
+ * Ensures the current user is an org Admin or Manager. Returns orgId.
+ * Use in API routes that manage users or org settings.
+ */
+export async function requireOrgAdmin(userId: string): Promise<string> {
+  const { orgId, role } = await getOrgIdAndRole(userId)
+  if (role !== 'ADMIN' && role !== 'MANAGER') {
+    throw new Error('Forbidden: requires Admin or Manager role')
+  }
+  return orgId
+}

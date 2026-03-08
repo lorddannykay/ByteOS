@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Code, ChevronDown, ChevronRight, Sparkles } from 'lucide-react'
+import { Code, ChevronDown, ChevronRight, Sparkles, Quote, BarChart3, FileText, Lightbulb, ArrowRight, Clock, HelpCircle, HelpCircleIcon, Globe, Brain, QuoteIcon, BookOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { RichContent } from '@/types/content'
+import type { RichContent, EntryState, ExitState } from '@/types/content'
 import { QuizCard } from '@/app/(dashboard)/courses/[id]/learn/QuizCard'
 import { TimelineBlock } from '@/components/learn/blocks/TimelineBlock'
 import { FlipcardBlock } from '@/components/learn/blocks/FlipcardBlock'
@@ -127,9 +127,41 @@ function DiagramBlock({
   )
 }
 
-function SideCardBlock({ title, content, tips }: { title: string; content: string; tips?: string[] }) {
+function SideCardBlock({ title, content, tips, noteType }: { title: string; content: string; tips?: string[]; noteType?: string }) {
+  const isWaitWhy = noteType === 'wait-but-why'
+  const isRealWorld = noteType === 'real-world'
+  const isBrainMoment = noteType === 'brain-moment'
+  const isExpertVoice = noteType === 'expert-voice'
+  const isRabbitHole = noteType === 'rabbit-hole'
+  const accentClass = isWaitWhy
+    ? 'border-amber-200/50 bg-amber-50/30 dark:border-amber-700/40 dark:bg-amber-950/20'
+    : isRealWorld
+      ? 'border-blue-200/50 bg-blue-50/30 dark:border-blue-700/40 dark:bg-blue-950/20'
+      : isBrainMoment
+        ? 'border-violet-200/50 bg-violet-50/30 dark:border-violet-700/40 dark:bg-violet-950/20'
+        : isExpertVoice
+          ? 'border-slate-200/50 bg-slate-50/50 dark:border-slate-600/40 dark:bg-slate-900/30'
+          : isRabbitHole
+            ? 'border-emerald-200/50 bg-emerald-50/30 dark:border-emerald-700/40 dark:bg-emerald-950/20'
+            : 'border-primary/20 bg-primary/5'
   return (
-    <aside className="my-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+    <aside className={cn('my-4 rounded-xl border p-4', accentClass)}>
+      {noteType && (
+        <div className="flex items-center gap-2 mb-2">
+          {isWaitWhy && <HelpCircleIcon className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />}
+          {isRealWorld && <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />}
+          {isBrainMoment && <Brain className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0" />}
+          {isExpertVoice && <QuoteIcon className="w-4 h-4 text-slate-600 dark:text-slate-400 shrink-0" />}
+          {isRabbitHole && <BookOpen className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
+          <span className="text-xs font-medium uppercase tracking-wider opacity-90">
+            {isWaitWhy && 'Wait, but why?'}
+            {isRealWorld && 'Real world'}
+            {isBrainMoment && 'Your brain just did something'}
+            {isExpertVoice && 'The expert would say'}
+            {isRabbitHole && 'Rabbit hole'}
+          </span>
+        </div>
+      )}
       <h4 className="text-sm font-semibold text-card-foreground mb-2">{title}</h4>
       <p className="text-sm text-muted-foreground leading-relaxed">{content}</p>
       {tips && tips.length > 0 && (
@@ -140,6 +172,61 @@ function SideCardBlock({ title, content, tips }: { title: string; content: strin
         </ul>
       )}
     </aside>
+  )
+}
+
+function EntryStateBlock({ entry, renderMarkdown }: { entry: EntryState; renderMarkdown: (body: string) => React.ReactNode }) {
+  const isProvocation = entry.type === 'provocation'
+  const isDataDrop = entry.type === 'data-drop'
+  const isScenario = entry.type === 'scenario-fragment'
+  const isContrarian = entry.type === 'contrarian-claim'
+  return (
+    <div
+      className={cn(
+        'rounded-xl border p-5',
+        isProvocation && 'border-primary/30 bg-primary/5',
+        isDataDrop && 'border-blue-200/50 bg-blue-50/50 dark:bg-blue-950/20',
+        isScenario && 'border-amber-200/50 bg-amber-50/30 dark:bg-amber-950/20',
+        isContrarian && 'border-orange-200/50 bg-orange-50/30 dark:bg-orange-950/20'
+      )}
+    >
+      {isProvocation && <Quote className="w-5 h-5 text-primary mb-2 opacity-80" />}
+      {isDataDrop && <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400 mb-2 opacity-80" />}
+      {isScenario && <FileText className="w-5 h-5 text-amber-600 dark:text-amber-400 mb-2 opacity-80" />}
+      {isContrarian && <HelpCircle className="w-5 h-5 text-orange-600 dark:text-orange-400 mb-2 opacity-80" />}
+      <div className={cn(
+        'text-sm leading-relaxed',
+        isProvocation && 'text-lg text-card-foreground font-medium',
+        (isDataDrop || isScenario || isContrarian) && 'text-muted-foreground'
+      )}>
+        {renderMarkdown(entry.content)}
+      </div>
+    </div>
+  )
+}
+
+function ExitStateBlock({ exit, renderMarkdown }: { exit: ExitState; renderMarkdown: (body: string) => React.ReactNode }) {
+  const isReflection = exit.type === 'reflection'
+  const isApply24h = exit.type === 'apply-24h'
+  const isTeaser = exit.type === 'next-conflict-teaser'
+  const isWhatChanged = exit.type === 'what-changed'
+  return (
+    <div
+      className={cn(
+        'rounded-xl border p-5',
+        isReflection && 'border-primary/20 bg-primary/5',
+        isApply24h && 'border-green-200/50 bg-green-50/30 dark:bg-green-950/20',
+        isTeaser && 'border-violet-200/50 bg-violet-50/30 dark:bg-violet-950/20',
+        isWhatChanged && 'border-sky-200/50 bg-sky-50/30 dark:bg-sky-950/20'
+      )}
+    >
+      {isApply24h && <Clock className="w-5 h-5 text-green-600 dark:text-green-400 mb-2 opacity-80" />}
+      {isTeaser && <ArrowRight className="w-5 h-5 text-violet-600 dark:text-violet-400 mb-2 opacity-80" />}
+      {isWhatChanged && <Lightbulb className="w-5 h-5 text-sky-600 dark:text-sky-400 mb-2 opacity-80" />}
+      <div className="text-sm text-muted-foreground leading-relaxed">
+        {renderMarkdown(exit.content)}
+      </div>
+    </div>
   )
 }
 
@@ -158,11 +245,13 @@ export function RichModuleContent({
 
   return (
     <div className="space-y-8">
-      {content.introduction && (
+      {content.entryState ? (
+        <EntryStateBlock entry={content.entryState} renderMarkdown={renderMarkdown} />
+      ) : content.introduction ? (
         <div className="text-sm text-muted-foreground leading-relaxed">
           {renderMarkdown(content.introduction)}
         </div>
-      )}
+      ) : null}
 
       <div className={cn('space-y-8', hasSideCard && 'lg:grid lg:grid-cols-[1fr,280px] lg:gap-8 lg:items-start')}>
         <div className="space-y-8">
@@ -313,6 +402,7 @@ export function RichModuleContent({
                   },
                 ],
               }
+              const quizMode = el.quizMode ?? 'standard'
               return (
                 <div key={idx} className="my-6">
                   <QuizCard
@@ -324,6 +414,8 @@ export function RichModuleContent({
                     onComplete={onQuizComplete}
                     onAskByte={onAskByte}
                     onSkip={() => {}}
+                    quizMode={quizMode}
+                    peerWrongPercent={el.data.peerWrongPercent != null ? Number(el.data.peerWrongPercent) : undefined}
                   />
                 </div>
               )
@@ -390,11 +482,13 @@ export function RichModuleContent({
             return null
           })}
 
-          {content.summary && (
+          {content.exitState ? (
+            <ExitStateBlock exit={content.exitState} renderMarkdown={renderMarkdown} />
+          ) : content.summary ? (
             <div className="text-sm text-muted-foreground leading-relaxed">
               {renderMarkdown(content.summary)}
             </div>
-          )}
+          ) : null}
         </div>
 
         {hasSideCard && content.sideCard && (
@@ -403,6 +497,7 @@ export function RichModuleContent({
               title={content.sideCard.title}
               content={content.sideCard.content}
               tips={content.sideCard.tips}
+              noteType={content.sideCard.noteType}
             />
           </div>
         )}

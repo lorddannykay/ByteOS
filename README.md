@@ -9,13 +9,11 @@ An AI-native learning platform: one reference implementation, and a plugin layer
 **Learns with you, for you.**
 
 </div>
-<div>
-</div>
 
 ---
 ## What Sudar is
 
-**Sudar** (formerly ByteOS) does two things:
+**Sudar** does two things:
 
 1. **Reference platform** — Authoring (Studio), learner experience (Learn), and intelligence (adaptive engine + AI tutor) over a shared data layer. One place for courses, paths, and a **Digital Learner Twin** that accumulates behaviour, preferences, and tutor context across sessions.
 2. **Adaptive Learning Layer (ALP)** — A plugin architecture so you can attach learner memory, memory-aware tutoring, and modality choice to Moodle, Canvas, or other LMSs you already run. No full migration.
@@ -185,7 +183,7 @@ Contributions that fit the goal of evidence-informed, personalised learning are 
   title        = {Sudar: An AI-Native Learning Operating System},
   year         = {2026},
   url          = {https://github.com/Dhanikesh-Karunanithi/Sudar},
-  note         = {Reference platform and ALP plugin layer for adaptive, memory-aware learning. Formerly ByteOS. Research foundation: RESEARCH_FOUNDATION.md}
+  note         = {Reference platform and ALP plugin layer for adaptive, memory-aware learning. Research foundation: RESEARCH_FOUNDATION.md}
 }
 ```
 
@@ -193,7 +191,7 @@ Contributions that fit the goal of evidence-informed, personalised learning are 
 
 ## Origin and creator
 
-Sudar grew out of the ByteAI/ByteVerse line of work: authoring tools, LMS prototypes, AI tutors, and adaptive engines. **Dhanikesh "Dhani" Karunanithi** is the creator. The aim is a single open platform and plugin layer so learning can remember the learner and adapt—both as a standalone product and on top of the LMSs organisations already use.
+Sudar grew out of the SudarAI/SudarVerse line of work: authoring tools, LMS prototypes, AI tutors, and adaptive engines. **Dhanikesh "Dhani" Karunanithi** is the creator. The aim is a single open platform and plugin layer so learning can remember the learner and adapt—both as a standalone product and on top of the LMSs organisations already use.
 
 <p align="center">
   <strong>Sudar</strong> — Learns with you, for you.

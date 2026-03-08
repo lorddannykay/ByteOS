@@ -5,14 +5,15 @@ import { SidebarContentProvider } from '@/contexts/SidebarContentContext'
 
 interface DashboardShellProps {
   user: { email: string; full_name?: string | null; avatar_url?: string | null }
+  orgRole?: 'ADMIN' | 'MANAGER' | 'CREATOR' | 'LEARNER'
   children: React.ReactNode
 }
 
-export function DashboardShell({ user, children }: DashboardShellProps) {
+export function DashboardShell({ user, orgRole = 'LEARNER', children }: DashboardShellProps) {
   return (
     <SidebarContentProvider>
       <div className="flex h-screen bg-slate-950 overflow-hidden">
-        <Sidebar user={user} />
+        <Sidebar user={user} orgRole={orgRole} />
         <main className="flex-1 overflow-y-auto bg-slate-950">
           {children}
         </main>

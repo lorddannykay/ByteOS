@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, BookOpen, ChevronDown, ChevronRight, Code } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { RichContent, RichContentSection, RichInteractiveElement } from '@/types/content'
-import { isRichContent } from '@/types/content'
+import { isRichContent, isScormContent } from '@/types/content'
 
 interface Module {
   id: string
@@ -106,6 +106,26 @@ function ModuleContentDisplay({ module }: { module: Module }) {
       <div className="flex flex-col items-center justify-center py-16 text-slate-500">
         <BookOpen className="w-10 h-10 opacity-50" />
         <p className="text-sm mt-2">No content yet</p>
+      </div>
+    )
+  }
+  if (isScormContent(content)) {
+    const proxyUrl = content.launch_url.startsWith('http')
+      ? (() => { const m = content.launch_url.match(/\/course-media\/(.+)$/); return m ? `/api/scorm/${m[1]}` : content.launch_url })()
+      : content.launch_url.startsWith('/api/scorm/') ? content.launch_url
+      : `/api/scorm/${content.launch_url}`
+    return (
+      <div className="w-full space-y-3">
+        <div className="rounded-xl overflow-hidden border border-slate-700 bg-black" style={{ minHeight: '520px' }}>
+          <iframe
+            src={proxyUrl}
+            className="w-full h-full"
+            style={{ minHeight: '520px', border: 'none' }}
+            allow="fullscreen"
+            title="SCORM content preview"
+          />
+        </div>
+        <p className="text-xs text-slate-500 text-center">SCORM {content.scorm_version ?? '1.2'} — Interactive module</p>
       </div>
     )
   }

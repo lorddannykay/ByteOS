@@ -40,7 +40,7 @@ export default function LoginPage() {
         <div className="relative flex items-center gap-3">
           <div className="relative w-9 h-9 shrink-0">
             <Image
-              src="/sudar-logo.png"
+              src="/sudar-logo-dark.png"
               alt="Sudar"
               fill
               className="object-contain"
@@ -91,7 +91,7 @@ export default function LoginPage() {
           <div className="lg:hidden flex items-center gap-3 justify-center">
             <div className="relative w-9 h-9 shrink-0">
               <Image
-                src="/sudar-logo.png"
+                src="/sudar-logo-dark.png"
                 alt="Sudar"
                 fill
                 className="object-contain"

@@ -1,4 +1,4 @@
-# ByteOS Demo
+# Sudar Demo
 
 This page will link to a short **demo video** showing Sudar's longitudinal memory and adaptive behaviour in action.
 
@@ -22,4 +22,4 @@ This page will link to a short **demo video** showing Sudar's longitudinal memor
 
 ---
 
-*ByteOS — Learns with you, for you.*
+*Sudar — Learns with you, for you.*

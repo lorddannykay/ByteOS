@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckCircle2, XCircle, ChevronRight, CircleHelp, Sparkles, RefreshCcw, Bot } from 'lucide-react'
+import { CheckCircle2, XCircle, ChevronRight, CircleHelp, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { QuizMode } from '@/types/content'
 
 interface QuizQuestion {
   id: string
@@ -26,19 +27,27 @@ interface Props {
   onComplete: (score: number, wrongTopics: string[]) => void
   onAskByte: (prompt: string) => void
   onSkip: () => void
+  quizMode?: QuizMode
+  peerWrongPercent?: number
 }
 
-export function QuizCard({ quiz, moduleTitle, learnerName, onComplete, onAskByte, onSkip }: Props) {
+const CONFIDENCE_LABELS = ['Not sure', 'Somewhat', 'Very sure'] as const
+
+export function QuizCard({ quiz, moduleTitle, learnerName, onComplete, onAskByte, onSkip, quizMode = 'standard', peerWrongPercent }: Props) {
   const [currentQ, setCurrentQ] = useState(0)
   const [answers, setAnswers] = useState<Record<number, number>>({})
   const [submitted, setSubmitted] = useState(false)
   const [showResults, setShowResults] = useState(false)
+  const [confidence, setConfidence] = useState<number | null>(null)
 
   const questions = quiz.questions
   const q = questions[currentQ]
   const totalQ = questions.length
   const selectedAnswer = answers[currentQ] ?? -1
   const hasAnswered = selectedAnswer !== -1
+  const isConfidenceTagged = quizMode === 'confidence-tagged'
+  const needsConfidenceBeforeReveal = isConfidenceTagged && hasAnswered && !submitted
+  const canSubmit = hasAnswered && (!isConfidenceTagged || confidence !== null)
 
   function selectAnswer(idx: number) {
     if (submitted) return
@@ -49,6 +58,7 @@ export function QuizCard({ quiz, moduleTitle, learnerName, onComplete, onAskByte
     if (currentQ < totalQ - 1) {
       setCurrentQ((q) => q + 1)
       setSubmitted(false)
+      setConfidence(null)
     } else {
       // Show results
       const correct = questions.filter((q, i) => answers[i] === q.correct).length
@@ -63,10 +73,19 @@ export function QuizCard({ quiz, moduleTitle, learnerName, onComplete, onAskByte
 
   function handleSubmit() {
     if (!hasAnswered) return
+    if (isConfidenceTagged && confidence === null) return
     setSubmitted(true)
   }
 
+  const headerLabel =
+    quizMode === 'predict-then-learn'
+      ? 'Guess first — answer in the content below'
+      : quizMode === 'scenario-fork'
+        ? 'What would you do?'
+        : 'Quick check'
+
   const isCorrect = submitted && selectedAnswer === q.correct
+  const peerPct = peerWrongPercent ?? 68
 
   // ── Results screen ─────────────────────────────────────────────────
   if (showResults) {
@@ -124,7 +143,7 @@ export function QuizCard({ quiz, moduleTitle, learnerName, onComplete, onAskByte
         {wrongTopics.length > 0 && (
           <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <Bot className="w-4 h-4 text-primary" />
+              <img src="/sudar-chat-logo.png" className="w-4 h-4 object-contain" alt="Sudar" />
               <p className="text-sm font-semibold text-card-foreground">Sudar can help with these</p>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -172,7 +191,7 @@ export function QuizCard({ quiz, moduleTitle, learnerName, onComplete, onAskByte
       <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CircleHelp className="w-4 h-4 text-primary" />
-          <span className="text-sm font-semibold text-card-foreground">Quick check</span>
+          <span className="text-sm font-semibold text-card-foreground">{headerLabel}</span>
           <span className="text-xs text-muted-foreground">{moduleTitle}</span>
         </div>
         <div className="flex items-center gap-3">
@@ -230,6 +249,30 @@ export function QuizCard({ quiz, moduleTitle, learnerName, onComplete, onAskByte
           })}
         </div>
 
+        {/* Confidence (confidence-tagged): how sure are you? */}
+        {needsConfidenceBeforeReveal && (
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
+            <p className="text-xs font-semibold text-card-foreground">How sure are you?</p>
+            <div className="flex gap-2">
+              {CONFIDENCE_LABELS.map((label, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setConfidence(i)}
+                  className={cn(
+                    'flex-1 py-2 rounded-lg border text-xs font-medium transition-colors',
+                    confidence === i
+                      ? 'border-primary bg-primary/20 text-primary'
+                      : 'border-border text-muted-foreground hover:border-primary/30'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Explanation after submitting */}
         {submitted && (
           <div className={cn(
@@ -245,12 +288,17 @@ export function QuizCard({ quiz, moduleTitle, learnerName, onComplete, onAskByte
               </p>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">{q.explanation}</p>
+            {quizMode === 'peer-contrast' && !isCorrect && (
+              <p className="text-xs text-muted-foreground italic mt-2">
+                {peerPct}% of learners got this wrong the first time. You’re not alone — read the explanation and try the next one.
+              </p>
+            )}
             {!isCorrect && (
               <button
                 onClick={() => onAskByte(`I answered this quiz question incorrectly: "${q.question}". Can you explain the concept of "${q.topic}" more clearly?`)}
                 className="flex items-center gap-1.5 text-xs text-primary hover:text-primary font-medium mt-1"
               >
-                <Bot className="w-3.5 h-3.5" />Ask Sudar to explain {q.topic}
+                <img src="/sudar-chat-logo.png" className="w-3.5 h-3.5 object-contain" alt="Sudar" />Ask Sudar to explain {q.topic}
               </button>
             )}
           </div>
@@ -261,7 +309,7 @@ export function QuizCard({ quiz, moduleTitle, learnerName, onComplete, onAskByte
           {!submitted ? (
             <button
               onClick={handleSubmit}
-              disabled={!hasAnswered}
+              disabled={!canSubmit}
               className="flex-1 py-2.5 bg-primary hover:bg-primary disabled:bg-muted disabled:text-muted-foreground text-white text-sm font-semibold rounded-xl transition-all"
             >
               Check answer
@@ -281,7 +329,7 @@ export function QuizCard({ quiz, moduleTitle, learnerName, onComplete, onAskByte
               title="Ask Sudar before answering"
               className="p-2.5 bg-primary/5 hover:bg-primary/10 border border-primary/20 text-primary rounded-xl transition-colors"
             >
-              <Bot className="w-4 h-4" />
+              <img src="/sudar-chat-logo.png" className="w-4 h-4 object-contain" alt="Sudar" />
             </button>
           )}
         </div>

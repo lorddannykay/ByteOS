@@ -1,6 +1,6 @@
 # Sudar's Longitudinal Memory
 
-ByteOS's AI tutor **Sudar** uses a **longitudinal learner memory** so that every response is personalised across sessions and courses. This document describes how it works and where it lives in the codebase.
+Sudar's AI tutor **Sudar** uses a **longitudinal learner memory** so that every response is personalised across sessions and courses. This document describes how it works and where it lives in the codebase.
 
 ---
 
@@ -42,8 +42,8 @@ Sudar uses this to personalise every answer: reference prior struggles, match ex
 
 ## Why This Matters
 
-Most "AI in LMS" implementations are **stateless** — they do not remember the learner between sessions. ByteOS is built so that Sudar **remembers** and **adapts**: "Last time you struggled with X, so here's a different way…" is a core differentiator. This document exists so that newcomers and contributors can see that Sudar's memory is real and implemented, not planned.
+Most "AI in LMS" implementations are **stateless** — they do not remember the learner between sessions. Sudar is built so that Sudar **remembers** and **adapts**: "Last time you struggled with X, so here's a different way…" is a core differentiator. This document exists so that newcomers and contributors can see that Sudar's memory is real and implemented, not planned.
 
 ---
 
-*ByteOS — Learns with you, for you.*
+*Sudar — Learns with you, for you.*

@@ -24,6 +24,8 @@ function genId(): string {
 export function getModuleBodyText(content: ModuleContent | null | undefined): string {
   if (!content) return ''
   if (content.type === 'text') return content.body ?? ''
+  // SCORM modules are self-contained — treat as having content so AI generation is not triggered
+  if (content.type === 'scorm') return `[SCORM: ${(content as { launch_url?: string }).launch_url ?? ''}]`
   if (!isRichContent(content)) return ''
   const parts: string[] = []
   if (content.introduction?.trim()) parts.push(content.introduction.trim())

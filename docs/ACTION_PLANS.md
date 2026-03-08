@@ -1,4 +1,4 @@
-# ByteOS — Action Plans (Executable)
+# Sudar — Action Plans (Executable)
 
 This document defines concrete action plans that align with `STRATEGIC_PATH.md`.  
 Each plan has **objectives**, **tasks** (with hints), and **acceptance criteria**.  

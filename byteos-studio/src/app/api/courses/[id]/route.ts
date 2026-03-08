@@ -27,7 +27,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
   const admin = createAdminClient()
   const body = await request.json()
-  const allowed = ['title', 'description', 'difficulty', 'estimated_duration_mins', 'tags', 'status', 'is_adaptive', 'settings']
+  const allowed = ['title', 'description', 'difficulty', 'estimated_duration_mins', 'tags', 'status', 'is_adaptive', 'settings', 'template']
   const updates: Record<string, unknown> = {}
   for (const key of allowed) {
     if (key in body) updates[key] = body[key]

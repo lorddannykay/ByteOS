@@ -1,0 +1,71 @@
+# Summary
+
+A sophisticated dark-mode design system called 'Cyber Serif' that pairs classical Newsreader serif headlines with technical Space Grotesk labels and Inter body text. It features a #050505 background, #10b981 emerald accents, glassmorphic cards with animated shimmer borders, and mouse-tracked spotlight effects, all moving with a signature cubic-bezier(0.16, 1, 0.3, 1) easing.
+
+# Style
+
+High-contrast dark mode with a 'Classical Tech' aesthetic. Typography pairings: Newsreader (Serif) for headlines, Space Grotesk for mono-spaced technical labels, and Inter for legibility. Colors: Primary #050505 (Black), Accent #10b981 (Emerald), Text #EBEBEB. Effects: 12px backdrop blur, shimmer border gradients, and radial-gradient spotlight cards.
+
+## Spec
+
+### Visual Identity & Style Guide
+
+**Color Palette:**
+- Background: Deep Black (#050505)
+- Primary Accent: Emerald (#10b981) - use sparingly for highlights and active states.
+- Primary Text: Off-white (#EBEBEB)
+- Secondary/Muted Text: White with 40% opacity (rgba(255, 255, 255, 0.4))
+- Glass Element: rgba(255, 255, 255, 0.02) with 12px backdrop-blur-md.
+
+**Typography:**
+- **Headlines:** 'Newsreader' (Serif). Scale: 100px for Hero, 64px for sections. Weights: 200-800. Use italics for emerald-accented keywords.
+- **Technical Labels:** 'Space Grotesk' (Sans-Serif/Mono-style). 10px-12px size, Uppercase, tracking: 0.2em. 
+- **Body:** 'Inter' (Sans-Serif). 18px size, Weight: 300, leading-relaxed.
+
+**Animation & Micro-interactions:**
+- **Easing:** All transitions must use `cubic-bezier(0.16, 1, 0.3, 1)`.
+- **Shimmer Borders:** 1px borders with an animated 3-color gradient (transparent -> emerald -> transparent) moving at 4s linear cycles.
+- **Spotlight Tracking:** Radial gradient (`circle at var(--mouse-x) var(--mouse-y)`) with 12% opacity emerald glow appearing on card hover.
+- **Morphing Background:** Fixed blurred blobs (384px) with animated `border-radius` (morphing from 40/60 to 60/40) over 8s cycles.
+
+# Layout & Structure
+
+A structured, high-breathability layout using a 7xl (1280px) container, featuring a 100vh split-screen hero and a 3-column bento feature grid.
+
+## Navigation Bar
+
+Fixed top header. Height transitions from 96px to 64px on scroll. Background starts transparent, transitioning to black/80 with backdrop-blur-md. Left: Logo in a 40px white rounded-xl square with 360deg rotation on hover. Center: Space Grotesk uppercase links with a 1px emerald underline that expands from center-out on hover. Right: Pill-shaped emerald button (#10b981) with a pulse-glow animation.
+
+## Hero Section
+
+100vh height. 2-column split layout. Left side: Tech label with pulsing emerald dot followed by 100px Newsreader headline (tracking-tighter, leading-0.9). One word must be emerald-colored and italicized. Dual CTA buttons: one solid white pill, one ghost pill with white border. Right side: Floating UI mockup with glassmorphic cards, internal data bars, and parallax depth layers.
+
+## Feature Grid
+
+3-column grid using a 7xl container. Cards are rounded-3xl (40px padding). Each card features a shimmer-border effect and an internal icon in a rounded-2xl container that rotates 15deg on hover. Titles in Newsreader (24px), descriptions in muted Inter (16px). Cards enter the viewport with a staggered upward scroll reveal.
+
+## Technical Benchmark Table
+
+Contained within a large shimmer-border glass card. Header row uses Space Grotesk 10px uppercase with 40% opacity. Rows separated by 1px white/5 borders. Columns: 1. Parameter (White/80), 2. Baseline (White/40), 3. Cyber Serif (Emerald #10b981 bold), 4. Status (Pulsing emerald check icon).
+
+## CTA Section
+
+High-impact centered layout. 80px Newsreader headline using a 'gradient-text' animation (horizontal shift of White to Emerald to White). Subtext at 20px font-light. Large pill-shaped emerald button sitting on top of a blurred emerald glow (opacity 20%) that pulses continuously.
+
+# Special Components
+
+## Spotlight Card
+
+Interactive card that follows the user's mouse with a subtle emerald glow.
+
+Create a container with `overflow: hidden` and `position: relative`. Use a `::before` pseudo-element with a `radial-gradient(600px circle at var(--x) var(--y), rgba(16, 185, 129, 0.12), transparent 40%)`. Update `--x` and `--y` via JavaScript mousemove event. Set transition to 0.5s cubic-bezier(0.16, 1, 0.3, 1).
+
+## Shimmer Border
+
+Animated border effect that gives a 'scanning' light feel.
+
+Apply a 1px border with `rgba(255, 255, 255, 0.08)`. Add an `::after` pseudo-element with `inset: -1px` and a `linear-gradient(90deg, transparent, #10b981, transparent)`. Set `background-size` to 200% and animate `background-position` from 200% to -200% over 4s. Set `opacity: 0` normally and `opacity: 1` on hover.
+
+# Special Notes
+
+MUST DO: Use large border-radius (rounded-3xl or full pill) exclusively. Use #10b981 only as an accent; never for large backgrounds except for primary buttons. Headlines MUST be in Newsreader. MUST NOT: Use standard easing like 'ease-in-out' (only use the specified cubic-bezier). Avoid grey backgrounds; use #050505 for pure dark depth.

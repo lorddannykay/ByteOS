@@ -4,30 +4,144 @@ import { NextRequest, NextResponse } from 'next/server'
 import AdmZip from 'adm-zip'
 import { XMLParser } from 'fast-xml-parser'
 
-function stripHtml(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+// ---------------------------------------------------------------------------
+// SCORM 1.2 API shim — injected into every SCO launch HTML file before upload.
+// The SCO (or its frameset) calls window.API.LMSInitialize etc.; this shim
+// satisfies those calls and relays tracking data to the parent frame via
+// postMessage so CourseViewer can auto-complete the module on finish.
+// ---------------------------------------------------------------------------
+const SCORM_API_SHIM = `<script id="sudar-scorm-shim">(function(){
+  var d={};
+  function post(m){try{window.parent.postMessage(m,'*');}catch(e){}}
+  var API={
+    LMSInitialize:function(s){post({type:'scorm_initialize'});return'true';},
+    LMSFinish:function(s){
+      post({type:'scorm_finish',lesson_status:d['cmi.core.lesson_status']||'completed',data:d});
+      return'true';
+    },
+    LMSGetValue:function(n){return d[n]||'';},
+    LMSSetValue:function(n,v){
+      d[n]=v;
+      post({type:'scorm_set_value',name:n,value:v});
+      // Auto-send finish when status reaches a terminal state
+      if(n==='cmi.core.lesson_status'&&(v==='completed'||v==='passed'||v==='failed')){
+        post({type:'scorm_finish',lesson_status:v,data:d});
+      }
+      return'true';
+    },
+    LMSCommit:function(s){return'true';},
+    LMSGetLastError:function(){return'0';},
+    LMSGetErrorString:function(n){return'';},
+    LMSGetDiagnostic:function(n){return'';}
+  };
+  // Expose at multiple levels so nested frames also find it
+  window.API=API;
+  try{if(window.parent&&window.parent!==window)window.parent.API=API;}catch(e){}
+  try{if(window.top&&window.top!==window)window.top.API=API;}catch(e){}
+})();</script>`
+
+function injectScormShim(html: string): string {
+  if (html.includes('id="sudar-scorm-shim"')) return html
+  if (/<head[^>]*>/i.test(html)) {
+    return html.replace(/(<head[^>]*>)/i, `$1\n${SCORM_API_SHIM}`)
+  }
+  if (/<html[^>]*>/i.test(html)) {
+    return html.replace(/(<html[^>]*>)/i, `$1\n<head>${SCORM_API_SHIM}</head>`)
+  }
+  return SCORM_API_SHIM + html
 }
 
-function collectItems(item: { item?: unknown[] | unknown; title?: string; identifierref?: string }, out: { title: string; identifierref?: string }[] = []): { title: string; identifierref?: string }[] {
-  const single = Array.isArray(item.item) ? undefined : item.item
-  const list = Array.isArray(item.item) ? item.item : single ? [single] : []
-  const title = (typeof item.title === 'string' ? item.title : undefined) || 'Untitled'
-  const identifierref = item.identifierref ? String(item.identifierref) : undefined
-  if (list.length === 0) {
+// ---------------------------------------------------------------------------
+// Semantic text extractor — converts SCORM HTML into readable plain text
+// that Sudar can use as a knowledge base to answer questions about the module.
+// ---------------------------------------------------------------------------
+function extractSemanticText(html: string): string {
+  let text = html
+    // Kill scripts, styles, forms, nav — nothing Sudar needs
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, '')
+    .replace(/<nav[\s\S]*?<\/nav>/gi, '')
+    .replace(/<footer[\s\S]*?<\/footer>/gi, '')
+    .replace(/<form[\s\S]*?<\/form>/gi, '')
+    // Headings → newline + text
+    .replace(/<(h[1-6])[^>]*>([\s\S]*?)<\/\1>/gi, (_, _tag, inner) =>
+      '\n\n' + inner.replace(/<[^>]+>/g, ' ').trim() + '\n')
+    // List items → bullet
+    .replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (_, inner) =>
+      '\n• ' + inner.replace(/<[^>]+>/g, ' ').trim())
+    // Table cells → pipe-separated
+    .replace(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi, (_, inner) =>
+      ' | ' + inner.replace(/<[^>]+>/g, ' ').trim())
+    .replace(/<tr[^>]*>/gi, '\n')
+    // Paragraphs and divs → newlines
+    .replace(/<\/?(p|div|section|article|blockquote|pre|figure)[^>]*>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<hr\s*\/?>/gi, '\n---\n')
+    // Strip all remaining tags
+    .replace(/<[^>]+>/g, ' ')
+
+  // Decode common HTML entities
+  text = text
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&[a-z]{2,8};/gi, ' ')
+    // Clean up whitespace
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n[ \t]+/g, '\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+
+  return text
+}
+
+// ---------------------------------------------------------------------------
+// XML attribute helpers — fast-xml-parser uses @_ prefix for attributes
+// ---------------------------------------------------------------------------
+type XmlNode = Record<string, unknown>
+
+function attr(node: XmlNode, name: string): string {
+  return String((node[`@_${name}`] ?? node[name] ?? '')).trim()
+}
+
+function childText(node: XmlNode, tag: string): string {
+  const v = node[tag]
+  if (typeof v === 'string') return v.trim()
+  if (typeof v === 'object' && v !== null && '#text' in (v as object))
+    return String((v as XmlNode)['#text']).trim()
+  return ''
+}
+
+// ---------------------------------------------------------------------------
+// Collect SCO leaf items from an organization tree
+// ---------------------------------------------------------------------------
+interface ScormItem { title: string; identifierref?: string }
+
+function collectItems(node: XmlNode, out: ScormItem[] = []): ScormItem[] {
+  const title = childText(node, 'title') || attr(node, 'identifier') || 'Untitled'
+  const identifierref = attr(node, 'identifierref') || undefined
+
+  const rawItem = node.item
+  const children: XmlNode[] = rawItem == null
+    ? []
+    : Array.isArray(rawItem) ? rawItem as XmlNode[] : [rawItem as XmlNode]
+
+  if (children.length === 0) {
     out.push({ title, identifierref })
   } else {
-    for (const child of list) {
-      collectItems(child as { item?: unknown[] | unknown; title?: string; identifierref?: string }, out)
-    }
+    for (const child of children) collectItems(child, out)
   }
   return out
 }
 
+// ---------------------------------------------------------------------------
+// POST /api/courses/import-scorm
+// ---------------------------------------------------------------------------
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -54,6 +168,8 @@ export async function POST(request: NextRequest) {
   }
 
   const entries = zip.getEntries()
+
+  // ── Find imsmanifest.xml ──────────────────────────────────────────────────
   let manifestXml: string | null = null
   let manifestDir = ''
 
@@ -69,37 +185,68 @@ export async function POST(request: NextRequest) {
 
   if (!manifestXml) return NextResponse.json({ error: 'imsmanifest.xml not found in the package' }, { status: 400 })
 
-  const parser = new XMLParser({ ignoreAttributes: false, removeNSPrefix: true })
-  let manifest: Record<string, unknown>
+  // ── Parse manifest ────────────────────────────────────────────────────────
+  const parser = new XMLParser({ ignoreAttributes: false, removeNSPrefix: true, ignoreDeclaration: true })
+  let parsed: Record<string, unknown>
   try {
-    manifest = parser.parse(manifestXml) as Record<string, unknown>
+    parsed = parser.parse(manifestXml) as Record<string, unknown>
   } catch {
     return NextResponse.json({ error: 'Invalid manifest XML' }, { status: 400 })
   }
 
-  const orgs = manifest.organizations as { organization?: unknown[] | { default?: string; item?: unknown; title?: string }; default?: string } | undefined
-  const defaultId = (orgs as { default?: string })?.default
-  const orgList = Array.isArray(orgs?.organization) ? orgs.organization : orgs?.organization ? [orgs.organization] : []
-  const defaultOrg = defaultId
-    ? orgList.find((o: { identifier?: string }) => (o as { identifier?: string }).identifier === defaultId) ?? orgList[0]
-    : orgList[0]
+  // Root is <manifest> — fast-xml-parser nests it under the tag name
+  const root = (parsed.manifest as XmlNode) ?? parsed
 
-  if (!defaultOrg) return NextResponse.json({ error: 'No organization in manifest' }, { status: 400 })
+  // ── Resolve organizations ─────────────────────────────────────────────────
+  const orgsNode = root.organizations as XmlNode | undefined
+  const defaultOrgId = orgsNode ? attr(orgsNode, 'default') : ''
 
-  const orgObj = defaultOrg as { title?: string; item?: unknown[] | unknown }
-  const courseTitle = typeof orgObj.title === 'string' ? orgObj.title : 'Imported SCORM course'
-  const items = collectItems(orgObj as { item?: unknown[] | unknown; title?: string; identifierref?: string })
-
-  const resources = manifest.resources as { resource?: unknown[] | { identifier?: string; href?: string; '@_href'?: string } } | undefined
-  const resourceList = Array.isArray(resources?.resource) ? resources.resource : resources?.resource ? [resources.resource] : []
-  const resourceMap = new Map<string, { href: string }>()
-  for (const res of resourceList) {
-    const r = res as { identifier?: string; href?: string; '@_href'?: string }
-    const id = r.identifier ?? ''
-    const href = r.href ?? r['@_href'] ?? ''
-    if (id) resourceMap.set(id, { href })
+  let orgList: XmlNode[] = []
+  if (orgsNode?.organization) {
+    orgList = Array.isArray(orgsNode.organization)
+      ? orgsNode.organization as XmlNode[]
+      : [orgsNode.organization as XmlNode]
   }
 
+  let defaultOrg: XmlNode | undefined = defaultOrgId
+    ? orgList.find((o) => attr(o, 'identifier') === defaultOrgId) ?? orgList[0]
+    : orgList[0]
+
+  // ── Resolve resources ─────────────────────────────────────────────────────
+  const resourcesNode = root.resources as XmlNode | undefined
+  let resourceList: XmlNode[] = []
+  if (resourcesNode?.resource) {
+    resourceList = Array.isArray(resourcesNode.resource)
+      ? resourcesNode.resource as XmlNode[]
+      : [resourcesNode.resource as XmlNode]
+  }
+
+  // Fallback: no <organizations> but has <resources> — build synthetic org
+  if (!defaultOrg && resourceList.length > 0) {
+    defaultOrg = {
+      title: file.name.replace(/\.zip$/i, '') || 'Imported SCORM course',
+      item: resourceList.map((r) => ({
+        title: childText(r, 'title') || attr(r, 'identifier') || 'Untitled',
+        '@_identifierref': attr(r, 'identifier'),
+      })),
+    }
+  }
+
+  if (!defaultOrg) {
+    return NextResponse.json({ error: 'No organization or resources found in manifest' }, { status: 400 })
+  }
+
+  const courseTitle = childText(defaultOrg, 'title') || attr(defaultOrg, 'identifier') || 'Imported SCORM course'
+  const items = collectItems(defaultOrg)
+
+  const resourceMap = new Map<string, { href: string }>()
+  for (const res of resourceList) {
+    const id = attr(res, 'identifier')
+    const href = attr(res, 'href')
+    if (id && href) resourceMap.set(id, { href })
+  }
+
+  // ── Create course record ──────────────────────────────────────────────────
   const now = new Date().toISOString()
   const { data: course, error: courseError } = await admin
     .from('courses')
@@ -116,34 +263,149 @@ export async function POST(request: NextRequest) {
     .select('id')
     .single()
 
-  if (courseError || !course) return NextResponse.json({ error: courseError?.message }, { status: 500 })
+  if (courseError || !course) {
+    return NextResponse.json({ error: courseError?.message ?? 'Failed to create course' }, { status: 500 })
+  }
 
+  const courseId = course.id
+  const storagePath = `scorm-packages/${courseId}`
+
+  // ── Ensure the storage bucket exists (auto-create if missing) ────────────
+  const { data: buckets } = await admin.storage.listBuckets()
+  const bucketExists = buckets?.some((b) => b.name === 'course-media')
+  if (!bucketExists) {
+    const { error: bucketError } = await admin.storage.createBucket('course-media', {
+      public: true,
+    })
+    if (bucketError && !bucketError.message.includes('already exists')) {
+      await admin.from('courses').delete().eq('id', courseId)
+      return NextResponse.json({ error: `Could not create storage bucket: ${bucketError.message}` }, { status: 500 })
+    }
+  }
+
+  // ── Upload all ZIP files to Supabase Storage ──────────────────────────────
+  // HTML launch files get the SCORM API shim injected first.
+  const uploadErrors: string[] = []
+
+  for (const entry of entries) {
+    if (entry.isDirectory) continue
+    const entryName = entry.entryName.replace(/\\/g, '/')
+    let data: Buffer = entry.getData()
+
+    const isHtml = /\.html?$/i.test(entryName)
+    if (isHtml) {
+      try {
+        const html = data.toString('utf8')
+        data = Buffer.from(injectScormShim(html), 'utf8')
+      } catch {
+        // Leave binary as-is if UTF-8 decode fails
+      }
+    }
+
+    const mimeType = isHtml
+      ? 'text/html'
+      : entryName.endsWith('.js') ? 'application/javascript'
+      : entryName.endsWith('.css') ? 'text/css'
+      : entryName.endsWith('.png') ? 'image/png'
+      : entryName.endsWith('.jpg') || entryName.endsWith('.jpeg') ? 'image/jpeg'
+      : entryName.endsWith('.gif') ? 'image/gif'
+      : entryName.endsWith('.svg') ? 'image/svg+xml'
+      : entryName.endsWith('.mp4') ? 'video/mp4'
+      : entryName.endsWith('.mp3') ? 'audio/mpeg'
+      : entryName.endsWith('.xml') ? 'application/xml'
+      : 'application/octet-stream'
+
+    const { error: uploadError } = await admin.storage
+      .from('course-media')
+      .upload(`${storagePath}/${entryName}`, data, {
+        contentType: mimeType,
+        upsert: true,
+      })
+
+    if (uploadError) uploadErrors.push(`${entryName}: ${uploadError.message}`)
+  }
+
+  if (uploadErrors.length > 0) {
+    // Clean up course record if upload failed entirely
+    if (uploadErrors.length === entries.filter((e) => !e.isDirectory).length) {
+      await admin.from('courses').delete().eq('id', courseId)
+      return NextResponse.json({
+        error: `Storage upload failed. Make sure the "course-media" bucket exists in Supabase. Details: ${uploadErrors[0]}`,
+      }, { status: 500 })
+    }
+    // Partial failure — continue but log
+    console.warn('[import-scorm] Some files failed to upload:', uploadErrors.slice(0, 5))
+  }
+
+  // ── Create module records ─────────────────────────────────────────────────
   for (let i = 0; i < items.length; i++) {
     const it = items[i]
-    let body = ''
+    let launchHref = ''
+
     if (it.identifierref) {
       const res = resourceMap.get(it.identifierref)
       if (res?.href) {
-        const path = (manifestDir + res.href).replace(/\/+/g, '/')
-        const entry = entries.find((e) => e.entryName.replace(/\\/g, '/') === path || e.entryName.replace(/\\/g, '/').endsWith(res.href))
-        if (entry) {
-          const raw = entry.getData().toString('utf8')
-          body = raw.includes('<') ? stripHtml(raw) : raw
-          if (!body.trim()) body = raw.slice(0, 2000)
+        launchHref = (manifestDir + res.href).replace(/\/+/g, '/')
+      }
+    }
+
+    // Fallback: use the first HTML file if no explicit launch href
+    if (!launchHref) {
+      const fallback = entries.find((e) => /\.html?$/i.test(e.entryName) && !e.isDirectory)
+      if (fallback) launchHref = fallback.entryName.replace(/\\/g, '/')
+    }
+
+    // Store only the bucket-relative path. Each app proxies it through /api/scorm/
+    // so the iframe is same-origin and HTML renders correctly.
+    const launchUrl = launchHref ? `${storagePath}/${launchHref}` : ''
+
+    // ── Extract semantic text for Sudar's knowledge base ─────────────────
+    // Collect text from this module's SCO HTML file plus sibling HTML files
+    // in the same folder (slides, pop-ups, supplementary pages, etc.).
+    const textParts: string[] = []
+
+    if (launchHref) {
+      // Primary SCO launch file
+      const scoEntry = entries.find((e) => {
+        const n = e.entryName.replace(/\\/g, '/')
+        return n === launchHref || n.endsWith('/' + launchHref.split('/').pop()!)
+      })
+      if (scoEntry) {
+        try { textParts.push(extractSemanticText(scoEntry.getData().toString('utf8'))) } catch { /* ignore */ }
+      }
+
+      // Sibling HTML files in the same directory (limit to 5 extras)
+      const launchDir = launchHref.includes('/')
+        ? launchHref.slice(0, launchHref.lastIndexOf('/') + 1)
+        : ''
+      let extras = 0
+      for (const entry of entries) {
+        if (extras >= 5) break
+        const n = entry.entryName.replace(/\\/g, '/')
+        if (entry.isDirectory || n === launchHref || !/\.html?$/i.test(n)) continue
+        if (launchDir && n.startsWith(launchDir)) {
+          try { textParts.push(extractSemanticText(entry.getData().toString('utf8'))); extras++ } catch { /* ignore */ }
         }
       }
     }
-    if (!body.trim()) body = `Content for: ${it.title}`
 
-    await admin
-      .from('modules')
-      .insert({
-        course_id: course.id,
-        title: it.title,
-        content: { type: 'text', body: body.slice(0, 50000) },
-        order_index: i,
-      })
+    // Combine and cap at 12 000 chars — enough for Sudar to be context-aware
+    // without overwhelming the tutor's context window
+    const scormTextContent = textParts
+      .join('\n\n---\n\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+      .slice(0, 12000) || undefined
+
+    await admin.from('modules').insert({
+      course_id: courseId,
+      title: it.title,
+      content: launchUrl
+        ? { type: 'scorm', launch_url: launchUrl, scorm_version: '1.2', scorm_text_content: scormTextContent }
+        : { type: 'text', body: `Content for: ${it.title}` },
+      order_index: i,
+    })
   }
 
-  return NextResponse.json({ course_id: course.id })
+  return NextResponse.json({ course_id: courseId })
 }

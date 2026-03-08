@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
   interface OrgMember { org: { name: string } | null }
   const orgMembers = (profile as unknown as { org_id: OrgMember[] })?.org_id
-  const orgName = orgMembers?.[0]?.org?.name ?? 'ByteOS'
+  const orgName = orgMembers?.[0]?.org?.name ?? 'Sudar'
   const recipientName = (profile as { full_name?: string })?.full_name ?? 'Learner'
 
   const verificationCode = randomBytes(16).toString('hex')

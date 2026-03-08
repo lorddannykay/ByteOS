@@ -21,6 +21,7 @@ export type Database = {
           role: Database['public']['Enums']['role']
           org_id: string | null
           onboarding_complete: boolean
+          require_password_change: boolean
           created_at: string
           updated_at: string
         }
@@ -31,6 +32,7 @@ export type Database = {
           role?: Database['public']['Enums']['role']
           org_id?: string | null
           onboarding_complete?: boolean
+          require_password_change?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -40,6 +42,7 @@ export type Database = {
           role?: Database['public']['Enums']['role']
           org_id?: string | null
           onboarding_complete?: boolean
+          require_password_change?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -69,6 +72,29 @@ export type Database = {
           branding?: Json | null
           settings?: Json | null
           plan?: string
+        }
+        Relationships: []
+      }
+      org_invites: {
+        Row: {
+          id: string
+          org_id: string
+          email: string
+          role: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          email: string
+          role?: string
+          created_at?: string
+        }
+        Update: {
+          org_id?: string
+          email?: string
+          role?: string
+          created_at?: string
         }
         Relationships: []
       }
@@ -124,6 +150,46 @@ export type Database = {
           next_best_action?: Json | null
           ai_tutor_context?: Json | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      learner_performance_records: {
+        Row: {
+          id: string
+          org_id: string
+          user_id: string
+          source_type: string
+          key: string
+          value: number
+          value_display: string | null
+          period_start: string | null
+          period_end: string | null
+          recorded_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          user_id: string
+          source_type: string
+          key: string
+          value: number
+          value_display?: string | null
+          period_start?: string | null
+          period_end?: string | null
+          recorded_at?: string
+          created_at?: string
+        }
+        Update: {
+          org_id?: string
+          user_id?: string
+          source_type?: string
+          key?: string
+          value?: number
+          value_display?: string | null
+          period_start?: string | null
+          period_end?: string | null
+          recorded_at?: string
         }
         Relationships: []
       }

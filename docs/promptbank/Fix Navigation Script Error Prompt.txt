@@ -1,0 +1,74 @@
+# Summary
+
+A creative, organic design system that mimics a physical sketchbook. It prioritizes personality over corporate sterility by using imperfect lines, handwritten fonts, and tactile UI elements like tape and pins.
+
+# Style
+
+The style is 'Digital Sketchbook'. It pairs 'Kalam' (bold, handwritten) for headings with 'Patrick Hand' (casual cursive) for body text. The color palette is grounded in a warm paper-white (#fdfaf6) with high-contrast black borders (#1a1a1a) and playful pastel highlights. Micro-interactions include 'scribble' animations, floating elements, and wavy underlines.
+
+## Spec
+
+Create a design system with a 'Hand-Drawn Sketchbook' theme. 
+
+### Colors:
+- Background: #fdfaf6 with a radial dot pattern (1.5px dots of #e5e0d8 every 32px).
+- Primary Text/Borders: #1a1a1a.
+- Accents: Orange (#fb923c), Yellow (#fef08a), Red (#ef4444), Blue (#60a5fa).
+
+### Typography:
+- Headings (H1-H4): 'Kalam', cursive. H1: 8xl (96px), H2: 5xl (48px).
+- Body Text: 'Patrick Hand', cursive. Size: 24px (text-2xl) for leads, 18px-20px for content.
+
+### Borders & Shadows:
+- 'Wobbly' Border Radius: Apply `border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px` to elements for an hand-drawn look.
+- Hard Shadows: Use 0-blur shadows `box-shadow: 6px 6px 0px 0px #1a1a1a`. On hover/active, reduce to 3px or 0px to simulate 'pressing' the element.
+- Borders: Always 3px solid #1a1a1a.
+
+### Animations:
+- Float: `translateY(-10px) rotate(2deg)` looping over 4s.
+- Scroll Reveal: Opacity 0 to 1 with `cubic-bezier(0.175, 0.885, 0.32, 1.275)` for a slight bounce.
+- Hover: Add slight rotations (1deg to -1deg) on interactive cards.
+
+# Layout & Structure
+
+Irregular, airy layout that breaks the traditional grid with tilted elements and 'pinned' objects. Sections are separated by dashed dividers rather than solid lines.
+
+## Navigation Bar
+
+A fixed top navigation bar. The container should be a white wobbly-border card with a hard shadow. Links should use wavy underlines (`text-decoration-style: wavy`) in different colors (orange, yellow, blue, red) on hover. Logo should be enclosed in curly braces like `{brand.sketch}`.
+
+## Hero Section
+
+Center-aligned hero with a massive H1. Include a hand-drawn SVG 'scribble' underline effect beneath key words. Surround the text with floating icons (pencil, code tags) at varying angles. Feature two primary CTA buttons with wobbly borders and hard shadows that 'press' down (translate 3px) when clicked.
+
+## Feature Grid
+
+A 3-column grid of cards. Each card must have a unique slight rotation (-1 to 2 degrees) to feel organic. Icons should be placed inside smaller wobbly-bordered circles with soft pastel backgrounds.
+
+## Project Gallery
+
+Alternating row layout. Image containers should look like physical polaroids or photos 'stuck' to the page. Use absolute-positioned 'tape' elements (semi-transparent gray rectangles with blur) and 'thumbtacks' (small red circles with a 2px black border) at the corners of images. Use a dashed border divider between projects.
+
+## Contact Form
+
+Set inside a large yellow-100 (#fef9c3) wobbly-border container that mimics a sticky note. Form inputs should have 2px black borders and a wobbly radius. Use a large black 'Submit' button that occupies the full width on mobile.
+
+# Special Components
+
+## Digital Tape Overlay
+
+Semi-transparent decorative tape used to 'hold' images.
+
+Create a 'tape' element: `position: absolute; width: 80px; height: 25px; background: rgba(0,0,0,0.05); backdrop-filter: blur(2px); border: 1px solid rgba(0,0,0,0.1); transform: rotate(-3deg); z-index: 10;`. Place it over the corners of image containers.
+
+## Thumbtack Pin
+
+Decorative pin icon.
+
+A 14px circle with `#ef4444` background, 2px solid `#1a1a1a` border, and a small 2px shadow. Position it absolutely at the top-center or top-right of cards.
+
+## Wavy Underline Link
+
+Links that feel hand-drawn.
+
+Links should have no default underline. On hover, apply `text-underline-offset: 8px; text-decoration: underline wavy #fb923c 2px;`.

@@ -1,0 +1,72 @@
+# Summary
+
+A modern, sustainable brand aesthetic that bridges the gap between raw nature and high-end luxury through a primary green (#00AB8E) and secondary orange-gold (#F0B13D) color scheme. The design uses architectural framing, floating UI badges, and editorial serif accents to establish authority and ecological commitment.
+
+# Style
+
+The style is 'Eco-Premium Minimalism'. It utilizes a sophisticated primary green (#00AB8E) for brand identity, a gold/orange accent (#F0B13D) for premium CTAs and highlights, and a neutral grey (#929292) for structural elements and secondary text. Typography pairs the functional Helvetica Neue (Sans-serif) with the elegant Playfair Display (Serif) for headings. Visuals are defined by high-contrast shadows, subtle blur effects (backdrop-filter), and geometric 'cube' accents.
+
+## Spec
+
+### Design System: Eco-Premium Minimalism
+
+**1. Palette & Color Logic**
+- **Primary Green:** #00AB8E (Use for primary buttons, active states, and success indicators).
+- **Secondary Gold:** #F0B13D (Use for 'Premium/Luxury' tier badges, high-priority CTAs, and active location pins).
+- **Structural Grey:** #929292 (Use at 20% opacity for borders, 100% for secondary body text).
+- **Backgrounds:** Pure White (#FFFFFF) for light sections, Deep Slate (#0a0a0a) for dark-mode sections, and Subtle Tint (#929292 at 5%) for section separation.
+
+**2. Typography Hierarchy**
+- **Headings (Editorial):** Playfair Display, Italic, 700 weight. Use sparingly for conceptual emphasis.
+- **Headings (UI):** Helvetica Neue, Bold, 700 weight. Line-height: 1.1. Sizes: 5XL (Hero), 4XL (Sections).
+- **Body:** Helvetica Neue, Regular/Medium, 400-500 weight. Color: #929292 for description, #0a0a0a for primary context. Size: 18px (Large), 14px (Standard).
+- **Badges/Small Caps:** Bold, Uppercase, Tracking: 0.2em, Size: 10px-12px.
+
+**3. Visual Effects**
+- **The 'Orange Glow':** `box-shadow: 0 0 25px rgba(240, 177, 61, 0.3);` applied to gold CTAs.
+- **The 'Cube Border':** A decorative corner accent. Pseudo-element on images: 40x40px, 3px solid #F0B13D, placed at top-right with negative offset.
+- **Card Interaction:** `transition: all 0.3s ease; hover: translateY(-8px); shadow: 0 20px 40px rgba(0, 171, 142, 0.1);`
+
+# Layout & Structure
+
+The layout follows a modular grid system with asymmetrical hero sections, conceptual horizontal connectors, and tiered card-based product showcases. It emphasizes white space and clean vertical flow.
+
+## Navigation Bar
+
+Sticky header with `backdrop-filter: blur(12px)` and `bg-white/95`. Height: 80px. Border-bottom: 1px solid #929292 at 20% opacity. Left-aligned logo, right-aligned nav links in uppercase 12px bold Helvetica. Primary CTA as a 'Pill' button with #00AB8E background.
+
+## Hero Section
+
+Two-column grid (60/40 split). Left: Sustainable leaf badge, 5XL bold headline, grey descriptive text, and a flex-row of two distinct CTA styles (Solid Green with glow vs. Ghost Grey border). Right: Image container with the 'Cube Border' decorative corner and a floating gold stats card positioned -24px from bottom-left.
+
+## The Bridge (Feature Comparison)
+
+A three-part conceptual layout. Left and Right columns contain white rounded-3xl cards with icons. Center column features 'The Bridge'—a text label sandwiched between two horizontal lines using a linear-gradient from #00AB8E to #F0B13D (30% opacity).
+
+## Tiered Product Grid
+
+Three-column grid of vertical cards. The center card is emphasized with a `-mt-4` offset and a #F0B13D ring/border. Cards feature a top-aligned image (aspect 4:3), interior content with a checkmark list using #00AB8E icons, and a footer price-point with a circular icon-only action button.
+
+## Dark Expansion Section
+
+Background #0a0a0a with white text. Features a 2-column layout. Left: Location list using status-colored circles (Green/Gold/Dark Green). Right: Abstract geometric background pattern (16-square grid at 10% opacity) with bouncing map-pin icons.
+
+# Special Components
+
+## Status Badge
+
+Floating pill labels for product tiers.
+
+Background: White; Text: Brand color (#00AB8E or #F0B13D); Padding: 4px 12px; Border-radius: 999px; Font-size: 10px; Font-weight: Bold; Shadow: Soft elevation.
+
+## The Bridge Connector
+
+A visual separator used to show hybrid concepts.
+
+A vertical stack consisting of: 1. Horizontal line (gradient #00AB8E -> #F0B13D, 2px height). 2. Pill button (bg: #F0B13D, white text, uppercase, tracking-widest). 3. Repeated horizontal line. Ensures conceptual flow between two opposing categories.
+
+## Interactive Cube Card
+
+Service or unit cards with specific hover behaviors.
+
+Container with border-radius 24px. Image section uses `overflow: hidden` with `hover: scale(105)`. Bottom section uses a light grey tint background (`#929292/5`). Booking button is a 48px circle that fills with #00AB8E on hover.

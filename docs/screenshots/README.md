@@ -1,6 +1,6 @@
-# ByteOS Screenshots
+# Sudar Screenshots
 
-Add 2–4 screenshots here to show that ByteOS is building, not just planning. Suggested images:
+Add 2–4 screenshots here to show that Sudar is building, not just planning. Suggested images:
 
 1. **Learn dashboard** — Personalized home (streak, next best action, upcoming deadlines).
 2. **Course viewer + Sudar** — A course module with the Sudar tutor sidebar open.
@@ -10,4 +10,4 @@ Name files clearly (e.g. `learn-dashboard.png`, `course-viewer-sudar.png`, `stud
 
 ---
 
-*ByteOS — Learns with you, for you.*
+*Sudar — Learns with you, for you.*

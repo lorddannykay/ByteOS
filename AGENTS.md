@@ -1,21 +1,21 @@
-# ByteOS — AI Agent Instructions
+# Sudar — AI Agent Instructions
 ## For: Cursor, GitHub Copilot, Devin, and all AI coding agents
 
 > **READ THIS BEFORE WRITING A SINGLE LINE OF CODE.**
-> This file exists so that every AI agent working on ByteOS understands exactly what it is,
+> This file exists so that every AI agent working on Sudar understands exactly what it is,
 > why it exists, and how to build it correctly. The context here is not optional — it is the
 > architectural contract you must follow.
 
 ---
 
-## What Is ByteOS?
+## What Is Sudar?
 
-ByteOS is an AI-native Learning Operating System. It is NOT:
+Sudar is an AI-native Learning Operating System. It is NOT:
 - Just another LMS (like Moodle, Canvas, Blackboard)
 - Just another eLearning authoring tool (like Rise360, Articulate Storyline, Adobe Captivate)
 - Just another AI chatbot bolted onto a course platform
 
-ByteOS IS:
+Sudar IS:
 - A platform where the AI *learns the learner* over time and adapts everything to them
 - A democratized alternative to expensive authoring tools — anyone can build world-class training
 - An integrated system where content is authored ONCE and delivered in ANY modality (text, video,
@@ -37,9 +37,9 @@ ByteOS/
 ├── AGENTS.md                 ← This file
 ├── .cursorrules              ← Coding rules
 ├── docs/                     ← All planning documents
-├── byteos-studio/            ← Admin/creator app (Next.js 14)
-├── byteos-learn/             ← Learner app (Next.js 14)
-├── byteos-intelligence/      ← AI engine (Python FastAPI)
+├── byteos-studio/            ← Sudar Studio (Admin/creator app, Next.js 14)
+├── byteos-learn/             ← Sudar Learn (Learner app, Next.js 14)
+├── byteos-intelligence/      ← Sudar Intelligence (AI engine, Python FastAPI)
 ├── byteos-video/             ← Video generation microservice
 └── byteos-renderer/          ← Remotion MP4 renderer
 ```
@@ -48,7 +48,7 @@ ByteOS/
 
 ## The Three Apps — Know Which One You're In
 
-### 1. ByteOS Studio (`/byteos-studio`)
+### 1. Sudar Studio (`/byteos-studio`)
 **Who uses it**: Admins, L&D managers, content creators
 **What it does**: Course creation, learning path management, analytics, org settings
 **Stack**: Next.js 14, TypeScript, Tailwind CSS, Prisma, Supabase
@@ -60,18 +60,18 @@ ByteOS/
 - `lib/templates/` — 14 course visual templates
 - `prisma/schema.prisma` — Database schema (mirrors Supabase)
 
-### 2. ByteOS Learn (`/byteos-learn`)
+### 2. Sudar Learn (`/byteos-learn`)
 **Who uses it**: Learners
 **What it does**: Take courses, interact with AI tutor "Sudar", track progress, switch modalities
 **Stack**: Next.js 14, TypeScript, Tailwind CSS, Prisma, Supabase, Framer Motion, Zustand
 **Port**: 3001
 **Key files**:
 - `app/` — Next.js App Router pages
-- `components/modalities/` — Text, Video, Audio, MindMap, Flashcards, ByteFeed, BytePlay
+- `components/modalities/` — Text, Video, Audio, MindMap, Flashcards, SudarFeed, SudarPlay
 - `components/tutor/` — AI Tutor "Sudar" sidebar
 - `lib/intelligence/` — API client for byteos-intelligence
 
-### 3. ByteOS Intelligence (`/byteos-intelligence`)
+### 3. Sudar Intelligence (`/byteos-intelligence`)
 **Who uses it**: Called by byteos-learn and byteos-studio via HTTP
 **What it does**: All heavy AI computation — adaptive engine, AI tutor, content generation
 **Stack**: Python 3.11+, FastAPI, Together AI, Supabase Python client
@@ -118,7 +118,7 @@ Sudar's tone: Conversational, not academic. Uses simple language. Avoids jargon.
 
 ## The Digital Learner Twin
 
-This is the core innovation of ByteOS. Every learner has a `learner_profile` record in Supabase
+This is the core innovation of Sudar. Every learner has a `learner_profile` record in Supabase
 that accumulates signals over time:
 
 - **Modality scores** (0.0 to 1.0): How well the learner engages with each modality
@@ -178,7 +178,7 @@ Instead, it silently powers ALL personalization decisions behind the scenes.
 - Do NOT hardcode organization IDs, user IDs, or course IDs in any logic
 - Do NOT create new npm packages/pip packages without a clear reason
 - Do NOT rename "Sudar" (the AI tutor) to anything else
-- Do NOT refer to the platform as "ByteLab", "ByteVerse", or any old name — it is "ByteOS"
+- Do NOT refer to the platform as "ByteLab", "ByteVerse", or any old name — it is "Sudar"
 - Do NOT break the separation between Studio (admin) and Learn (learner) surfaces
 - Do NOT store AI model responses in a way that can't be updated when models improve
 
@@ -205,6 +205,6 @@ See `ECOSYSTEM.md` Section 8 for the full build roadmap with checkboxes.
 
 ---
 
-*ByteOS — Learns with you, for you.*
+*Sudar — Learns with you, for you.*
 *This agent context file is maintained by the project owner.*
 *Last updated: February 2026*

@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -26,8 +27,25 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error && data?.user?.email) {
+      const admin = createAdminClient()
+      const { data: invites } = await admin
+        .from('org_invites')
+        .select('org_id, role')
+        .eq('email', data.user.email.toLowerCase())
+      if (invites?.length) {
+        for (const inv of invites) {
+          await admin.from('profiles').update({ org_id: inv.org_id }).eq('id', data.user.id)
+          const { data: existing } = await admin.from('org_members').select('id').eq('org_id', inv.org_id).eq('user_id', data.user.id).single()
+          if (!existing) {
+            await admin.from('org_members').insert({ org_id: inv.org_id, user_id: data.user.id, role: inv.role })
+          }
+          const { data: lp } = await admin.from('learner_profiles').select('id').eq('user_id', data.user.id).single()
+          if (!lp) await admin.from('learner_profiles').insert({ user_id: data.user.id })
+        }
+        await admin.from('org_invites').delete().eq('email', data.user.email.toLowerCase())
+      }
       return NextResponse.redirect(`${origin}${next}`)
     }
   }

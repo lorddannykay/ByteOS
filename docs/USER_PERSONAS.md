@@ -1,13 +1,13 @@
-# ByteOS — User Personas
+# Sudar — User Personas
 **Version**: 1.0 | **February 2026**
 
 ---
 
 ## Overview
 
-ByteOS serves two primary user types across two surfaces:
-- **Admins / Creators** → use ByteOS Studio
-- **Learners** → use ByteOS Learn
+Sudar serves two primary user types across two surfaces:
+- **Admins / Creators** → use Sudar Studio
+- **Learners** → use Sudar Learn
 
 Within each type, there are distinct personas with unique contexts, goals, and pain points.
 Every feature decision should be tested against at least one of these personas.
@@ -46,9 +46,9 @@ her days to produce one module and the result is "just okay."
 - She cannot afford Rise360 ($1,299/year) on top of Moodle fees
 - Senior leadership asks for "more engaging" training with no extra budget
 
-**How She Uses ByteOS**:
+**How She Uses Sudar**:
 - Uploads the compliance policy PDF on Monday morning
-- ByteOS Studio generates a 5-module course in 12 minutes
+- Sudar Studio generates a 5-module course in 12 minutes
 - She reviews, adjusts the template to match company branding, and publishes
 - Assigns the course to all retail staff with a 2-week deadline
 - Checks the compliance dashboard on Friday — 67% done, 8 people overdue
@@ -88,9 +88,9 @@ His only alternative is hiring an external training company — which costs $15,
 - External training companies are unaffordable
 - He writes detailed documents but needs them to become engaging courses
 
-**How He Uses ByteOS**:
+**How He Uses Sudar**:
 - Uploads his 40-page patient safety protocol document
-- ByteOS Studio reads it and generates a 6-module course with medical accuracy checks
+- Sudar Studio reads it and generates a 6-module course with medical accuracy checks
 - He reviews the quiz questions, adds 2 clinical photos from his own files
 - Publishes the course; nurses complete it on their phones between shifts
 - Sudar (AI tutor) answers nurses' clinical questions in context, citing the protocol
@@ -130,8 +130,8 @@ The board is asking her to prove learning investment creates business outcomes.
 - Cannot personalize at scale — every employee gets the same training
 - No AI capabilities in current stack
 
-**How She Uses ByteOS**:
-- Migrates her content library into ByteOS Studio
+**How She Uses Sudar**:
+- Migrates her content library into Sudar Studio
 - Sets up skills framework aligned to her company's competency model
 - Creates learning paths for each role with compliance requirements
 - Monitors the org-wide skill gap heatmap to inform hiring and development plans
@@ -139,7 +139,7 @@ The board is asking her to prove learning investment creates business outcomes.
 
 **Quote**:
 > "For the first time, I can show the board that the $200K we spent on learning
-> actually moved the needle on skills. ByteOS is the evidence I needed."
+> actually moved the needle on skills. Sudar is the evidence I needed."
 
 **Success State**: L&D is no longer a cost center — it's a measurable driver of business
 performance with data to prove it.
@@ -176,13 +176,13 @@ He learns best by doing and watching — reading walls of text is not how his br
 - Feels like the training doesn't see him as an individual
 - "It's the same course everyone else gets"
 
-**How He Uses ByteOS Learn**:
+**How He Uses Sudar Learn**:
 - Onboarding assessment reveals he's a visual/kinaesthetic learner
-- ByteOS auto-selects the Video modality for his first module
+- Sudar auto-selects the Video modality for his first module
 - He watches a 3-minute narrated video on his commute home
 - Gets stuck on a concept → asks Sudar: "Can you explain what 'risk mitigation' means here?"
 - Sudar responds in plain language with an example from Marcus's retail context
-- Switches to BytePlay for module 4 — plays a safety hazard spotting game
+- Switches to SudarPlay for module 4 — plays a safety hazard spotting game
 - Finishes the course, earns his certificate, shares it on LinkedIn
 
 **Quote**:
@@ -203,7 +203,7 @@ and Marcus looks forward to the next one.
 
 **Context**:
 Amara is ambitious. She wants to move into a Marketing Manager role within 18 months.
-She's using ByteOS on her own initiative — not because she was assigned a course, but
+She's using Sudar on her own initiative — not because she was assigned a course, but
 because she identified a skill gap (data analytics, presentation skills, leadership fundamentals)
 and is filling it systematically.
 
@@ -220,9 +220,9 @@ She learns best by reading and mindmaps — she loves seeing how concepts connec
 - Doesn't want to spend money on multiple subscriptions
 - Standard LMS courses are written for Americans — limited global relevance
 
-**How She Uses ByteOS Learn**:
+**How She Uses Sudar Learn**:
 - Sets a goal: "Become a Marketing Manager in 18 months"
-- ByteOS Intelligence suggests a learning path: Data Analytics → Business Communication →
+- Sudar Intelligence suggests a learning path: Data Analytics → Business Communication →
   Leadership Essentials → Marketing Strategy
 - Amara works through the path at her own pace
 - Uses MindMap modality to visualize how concepts connect before digging into text
@@ -231,7 +231,7 @@ She learns best by reading and mindmaps — she loves seeing how concepts connec
 - After 6 weeks: 3 certifications, visible skill progress, personal confidence boost
 
 **Quote**:
-> "ByteOS figured out what I needed to learn before I did. And it actually explains
+> "Sudar figured out what I needed to learn before I did. And it actually explains
 > things the way my brain works."
 
 **Success State**: A clear, AI-guided path to her career goal, with measurable progress
@@ -264,8 +264,8 @@ He learns best by listening — podcasts and audiobooks are how he consumes all 
 - Video courses require him to actually watch — he can't do this while driving
 - He can't read long documents on his phone while commuting
 
-**How He Uses ByteOS Learn**:
-- Opens ByteOS Learn on his iPhone at 7am before his drive
+**How He Uses Sudar Learn**:
+- Opens Sudar Learn on his iPhone at 7am before his drive
 - Sudar recommends: "You have 3 overdue modules — want me to play them as audio?"
 - Daniel taps Audio modality — his phone plays a podcast-style narration for 45 minutes
 - Bluetooth in his car handles playback; transcript auto-syncs in the background
@@ -290,7 +290,7 @@ happens during time he previously considered "dead" — his commute.
 **Device**: Mobile and laptop
 
 **Context**:
-Fatima is preparing for her first full-time job. She's heard of ByteOS through LinkedIn and
+Fatima is preparing for her first full-time job. She's heard of Sudar through LinkedIn and
 is using the free tier to upskill in Excel, project management, and professional communication
 before job applications.
 
@@ -307,19 +307,19 @@ Long articles and traditional eLearning feel like a chore.
 - She can't focus on long-form content
 - Generic courses assume she has work experience she doesn't have
 
-**How She Uses ByteOS Learn**:
+**How She Uses Sudar Learn**:
 - Signs up for free tier
 - Onboarding shows she's an "active, visual" learner
-- Starts with ByteFeed modality — micro-content cards she can consume in 5-minute bursts
-- Switches to BytePlay for Excel functions — the game makes it click in a way reading didn't
+- Starts with SudarFeed modality — micro-content cards she can consume in 5-minute bursts
+- Switches to SudarPlay for Excel functions — the game makes it click in a way reading didn't
 - Earns 3 free tier certificates, shares on LinkedIn
 - Gets a premium trial offer — converts to paid with first paycheck
 
 **Quote**:
-> "I learned more Excel in 2 hours on ByteOS than in 6 weeks of university lectures.
+> "I learned more Excel in 2 hours on Sudar than in 6 weeks of university lectures.
 > And the certificate actually looks good on my LinkedIn."
 
-**Success State**: Employed with a demonstrable skill portfolio, ByteOS was part of her
+**Success State**: Employed with a demonstrable skill portfolio, Sudar was part of her
 journey from student to professional.
 
 ---
@@ -334,8 +334,8 @@ journey from student to professional.
 | L1 — Marcus (Completer) | Learn | Engagement, comprehension | Video + Game | Phase 2–3 |
 | L2 — Amara (Climber) | Learn | Career guidance, retention | MindMap + Text | Phase 3 |
 | L3 — Daniel (Traveler) | Learn | Flexibility, mobile-first | Audio + Flash | Phase 3 |
-| L4 — Fatima (Student) | Learn | Affordability, fun | ByteFeed + Game | Phase 3–4 |
+| L4 — Fatima (Student) | Learn | Affordability, fun | SudarFeed + Game | Phase 3–4 |
 
 ---
 
-*ByteOS User Personas v1.0 | February 2026 | "Learns with you, for you."*
+*Sudar User Personas v1.0 | February 2026 | "Learns with you, for you."*

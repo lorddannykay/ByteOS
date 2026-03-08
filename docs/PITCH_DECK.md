@@ -1,15 +1,15 @@
-# ByteOS — Investor Pitch Deck
+# Sudar — Investor Pitch Deck
 ## "The Operating System for Learning"
 ### *Learns with you, for you.*
 
-> This document contains the narrative, data, and talking points for each slide in the ByteOS pitch deck.
+> This document contains the narrative, data, and talking points for each slide in the Sudar pitch deck.
 > Use this to build the visual deck in Canva, Pitch, or PowerPoint.
 
 ---
 
 ## SLIDE 1 — Cover
 
-**Headline**: ByteOS
+**Headline**: Sudar
 **Subheadline**: The Operating System for Learning
 **Tagline**: *Learns with you, for you.*
 **Visual**: Clean, minimal — deep blue-purple gradient with a single glowing node network
@@ -55,16 +55,16 @@ Learners hit a wall. There's nobody to ask. So they stop.
 
 ## SLIDE 4 — The Solution
 
-**Headline**: ByteOS — The Operating System for Learning
+**Headline**: Sudar — The Operating System for Learning
 
 **Visual**: The three-layer architecture diagram
 ```
 ┌─────────────────────────────────────┐
-│   ByteOS Studio (Create)            │  ← Any admin builds courses in minutes
+│   Sudar Studio (Create)            │  ← Any admin builds courses in minutes
 ├─────────────────────────────────────┤
-│   ByteOS Learn (Deliver)            │  ← Every learner gets a personalized experience
+│   Sudar Learn (Deliver)            │  ← Every learner gets a personalized experience
 ├─────────────────────────────────────┤
-│   ByteOS Intelligence (Adapt)       │  ← AI learns the learner, adapts everything
+│   Sudar Intelligence (Adapt)       │  ← AI learns the learner, adapts everything
 └─────────────────────────────────────┘
 ```
 
@@ -83,10 +83,10 @@ Learners hit a wall. There's nobody to ask. So they stop.
 **The Story Flow** (walk through visuals of each step):
 
 1. **Sarah, L&D Manager at a 500-person retail company** uploads a compliance policy PDF
-2. ByteOS Studio's AI reads it, generates a 5-module course with quizzes and branded visuals
+2. Sudar Studio's AI reads it, generates a 5-module course with quizzes and branded visuals
 3. Sarah reviews, tweaks 2 sentences, and hits Publish — total time: 12 minutes
 4. **Marcus, a store manager in Lagos** gets the course assigned to his learning path
-5. Marcus opens ByteOS Learn on his phone. The AI detected he's a visual learner — it auto-plays the
+5. Marcus opens Sudar Learn on his phone. The AI detected he's a visual learner — it auto-plays the
    video version of the course on first load
 6. Marcus gets stuck on module 3. Sudar (AI tutor) proactively pops up: "Looks like you've been on
    this section for a while — want me to explain it differently?"
@@ -100,7 +100,7 @@ cost under $0.50 in AI compute."
 
 ## SLIDE 6 — The Digital Learner Twin
 
-**Headline**: ByteOS doesn't just deliver courses. It learns the learner.
+**Headline**: Sudar doesn't just deliver courses. It learns the learner.
 
 **Visual**: A learner profile card with evolving data points
 
@@ -112,7 +112,7 @@ cost under $0.50 in AI compute."
 - AI tutor interaction history (every question asked, answered, and rated)
 - Next Best Action (what they should do next to reach their goal fastest)
 
-**The differentiation**: "Every other LMS tracks completions. ByteOS tracks learning."
+**The differentiation**: "Every other LMS tracks completions. Sudar tracks learning."
 
 ---
 
@@ -129,10 +129,10 @@ cost under $0.50 in AI compute."
 | Audio | Commuters, on-the-go learners |
 | MindMap | Systems thinkers, visual connectors |
 | Flashcards | Memorization, exam prep |
-| ByteFeed | Mobile-first, Gen Z, short attention spans |
-| BytePlay | Kinaesthetic learners, gamification fans |
+| SudarFeed | Mobile-first, Gen Z, short attention spans |
+| SudarPlay | Kinaesthetic learners, gamification fans |
 
-**Key message**: "Your L&D team creates the content once. ByteOS Intelligence handles every
+**Key message**: "Your L&D team creates the content once. Sudar Intelligence handles every
 modality automatically."
 
 ---
@@ -155,24 +155,24 @@ modality automatically."
 - Coursera: $500M ARR, 100M+ learners
 - Docebo: $180M ARR, 3,500 customers
 - 360Learning: $30M ARR, 1,700 customers
-- **ByteOS targeting**: SME + mid-market ($5,000–$50,000 ACV) — underserved by all of the above
+- **Sudar targeting**: SME + mid-market ($5,000–$50,000 ACV) — underserved by all of the above
 
 ---
 
 ## SLIDE 9 — Competitive Landscape
 
-**Headline**: ByteOS is the only platform that does all three.
+**Headline**: Sudar is the only platform that does all three.
 
 | | Create Fast | Adaptive Delivery | Personal AI Tutor | 7 Modalities | Affordable |
 |---|---|---|---|---|---|
-| ByteOS | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Sudar | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Rise360 | ❌ (requires ID skills) | ❌ | ❌ | ❌ | ❌ |
 | Articulate | ❌ (complex tool) | ❌ | ❌ | ❌ | ❌ |
 | Docebo | ❌ | ⚠️ limited | ❌ | ❌ | ❌ |
 | Coursera for Business | ❌ (their content only) | ⚠️ | ❌ | ❌ | ❌ |
 | ChatGPT/Claude | ⚠️ (text only) | ❌ | ⚠️ (no memory) | ❌ | ✅ |
 
-**Moat**: The Digital Learner Twin. The longer a learner uses ByteOS, the more personalized it
+**Moat**: The Digital Learner Twin. The longer a learner uses Sudar, the more personalized it
 becomes — creating compounding switching costs.
 
 ---
@@ -225,18 +225,18 @@ becomes — creating compounding switching costs.
 
 **Headline**: Built on real technology. Validated by real use.
 
-**What's already built** (ByteAI ecosystem, 18 months of development):
-- ByteLab: Full AI course builder (RAG, 14 templates, SCORM, media search, fact-checking)
-- ByteVerse-LMS: Learner delivery platform with Digital Learner Twin concept
-- BytePlay: AI game generator from learning objectives (genuinely novel)
+**What's already built** (SudarAI ecosystem, 18 months of development):
+- SudarLab: Full AI course builder (RAG, 14 templates, SCORM, media search, fact-checking)
+- SudarVerse-LMS: Learner delivery platform with Digital Learner Twin concept
+- SudarPlay: AI game generator from learning objectives (genuinely novel)
 - bytengine: AI content engine with adaptive difficulty and fine-tuning pipeline
 - bytetexttovid: Text-to-video generation with TTS narration
 - Remotion: Programmatic MP4 video renderer with HTTP API
-- ByteMind: AI mindmap generator (publishable npm package)
+- SudarMind: AI mindmap generator (publishable npm package)
 - Synchronicity: Live deployed application (givemeasignnow.app)
 
-**The ByteOS reorg**: All of the above is now being consolidated into one unified, production-ready
-platform — ByteOS. This is not a concept; it's a consolidation.
+**The Sudar reorg**: All of the above is now being consolidated into one unified, production-ready
+platform — Sudar. This is not a concept; it's a consolidation.
 
 ---
 
@@ -246,7 +246,7 @@ platform — ByteOS. This is not a concept; it's a consolidation.
 
 **Dhani — Founder & Builder**
 - Deep expertise in AI-powered learning technology
-- 18 months of continuous building across 30+ iterations of the ByteAI ecosystem
+- 18 months of continuous building across 30+ iterations of the SudarAI ecosystem
 - Hands-on full-stack development (Next.js, Python, AI integration)
 - Direct experience with L&D challenges in corporate environments
 
@@ -268,7 +268,7 @@ platform — ByteOS. This is not a concept; it's a consolidation.
 - 15% — Infrastructure & AI compute (Supabase, Together AI, Vercel)
 
 **18-month milestones with funding**:
-- Month 3: ByteOS v1 public launch (free + Pro tiers)
+- Month 3: Sudar v1 public launch (free + Pro tiers)
 - Month 6: 1,000 active learners, 25 paying organizations
 - Month 12: 10,000 active learners, 100 paying organizations
 - Month 18: $1M ARR, Series A ready
@@ -283,7 +283,7 @@ the privileged few.
 
 **Headline**: The future of learning is personal.
 
-**Visual**: The ByteOS tagline in large type
+**Visual**: The Sudar tagline in large type
 
 > *"Learns with you, for you."*
 
@@ -291,5 +291,5 @@ the privileged few.
 
 ---
 
-*ByteOS Pitch Deck v1.0 | February 2026*
+*Sudar Pitch Deck v1.0 | February 2026*
 *Confidential — For discussion purposes only*

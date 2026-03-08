@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -36,13 +35,14 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center space-y-3">
           <div className="relative w-16 h-16 mx-auto">
-            <Image
-              src="/sudar-logo.png"
-              alt="Sudar"
-              fill
-              className="object-contain"
-              sizes="64px"
-              priority
+            <span className="sr-only">Sudar</span>
+            <div
+              className="absolute inset-0 bg-primary block dark:hidden logo-mask-light"
+              aria-hidden
+            />
+            <div
+              className="absolute inset-0 bg-primary hidden dark:block logo-mask-dark"
+              aria-hidden
             />
           </div>
           <div>

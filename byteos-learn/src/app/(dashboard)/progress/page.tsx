@@ -1,3 +1,4 @@
+import dynamic from 'next/dynamic'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import {
@@ -11,6 +12,11 @@ import {
   GraduationCap,
 } from 'lucide-react'
 import { BentoCard } from '@/components/ui/BentoCard'
+
+const ProgressPieChart = dynamic(
+  () => import('@/components/progress/ProgressPieChart').then((m) => m.ProgressPieChart),
+  { ssr: false }
+)
 
 export default async function ProgressPage() {
   const supabase = await createClient()
@@ -73,13 +79,46 @@ export default async function ProgressPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-2xl font-bold text-card-foreground flex items-center gap-2">
+        <h1 className="font-display text-2xl md:text-3xl font-bold text-card-foreground flex items-center gap-2">
           <BarChart2 className="w-7 h-7 text-primary" />
           My Progress
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
           Overview of your courses, learning paths, and certificates
         </p>
+      </div>
+
+      {/* Summary stats + Pie chart row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="kpi-card !p-5">
+            <p className="text-muted-foreground text-xs font-medium">Courses in progress</p>
+            <p className="text-2xl font-bold text-card-foreground mt-1">{inProgressCourses.length}</p>
+          </div>
+          <div className="kpi-card !p-5">
+            <p className="text-muted-foreground text-xs font-medium">Courses completed</p>
+            <p className="text-2xl font-bold text-success mt-1">{completedCourses.length}</p>
+          </div>
+          <div className="kpi-card !p-5">
+            <p className="text-muted-foreground text-xs font-medium">Paths in progress</p>
+            <p className="text-2xl font-bold text-card-foreground mt-1">{inProgressPaths.length}</p>
+          </div>
+          <div className="kpi-card !p-5">
+            <p className="text-muted-foreground text-xs font-medium">Certificates</p>
+            <p className="text-2xl font-bold text-warning mt-1">{certifications?.length ?? 0}</p>
+          </div>
+        </div>
+        <div className="kpi-card flex flex-col" id="certifications">
+          <h3 className="font-display text-xl font-bold text-card-foreground mb-4">Distribution</h3>
+          <ProgressPieChart
+            data={[
+              { name: 'Courses in progress', value: inProgressCourses.length, color: 'var(--primary)' },
+              { name: 'Courses completed', value: completedCourses.length, color: 'var(--success)' },
+              { name: 'Paths in progress', value: inProgressPaths.length, color: 'var(--accent)' },
+              { name: 'Certificates', value: certifications?.length ?? 0, color: 'var(--warning)' },
+            ].filter((d) => d.value > 0)}
+          />
+        </div>
       </div>
 
       {/* Certificates */}
@@ -225,26 +264,6 @@ export default async function ProgressPage() {
           </div>
         )}
       </section>
-
-      {/* Summary stats - bento grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <BentoCard padding="sm">
-          <p className="text-muted-foreground text-xs font-medium">Courses in progress</p>
-          <p className="text-2xl font-bold text-card-foreground mt-1">{inProgressCourses.length}</p>
-        </BentoCard>
-        <BentoCard padding="sm">
-          <p className="text-muted-foreground text-xs font-medium">Courses completed</p>
-          <p className="text-2xl font-bold text-success mt-1">{completedCourses.length}</p>
-        </BentoCard>
-        <BentoCard padding="sm">
-          <p className="text-muted-foreground text-xs font-medium">Paths in progress</p>
-          <p className="text-2xl font-bold text-card-foreground mt-1">{inProgressPaths.length}</p>
-        </BentoCard>
-        <BentoCard padding="sm">
-          <p className="text-muted-foreground text-xs font-medium">Certificates</p>
-          <p className="text-2xl font-bold text-warning mt-1">{certifications?.length ?? 0}</p>
-        </BentoCard>
-      </div>
     </div>
   )
 }

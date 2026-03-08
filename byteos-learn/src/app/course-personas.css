@@ -1,0 +1,116 @@
+/**
+ * Learning Persona styles — full aesthetic per theme.
+ * Scoped to .course-theme-provider[data-persona="..."] so each course feels distinct.
+ */
+
+/* ─── Precision: architectural, hairline, no radius ───────────────────────── */
+.course-theme-provider[data-persona="precision"] {
+  --persona-heading-tracking: -0.04em;
+  --persona-section-gap: 2rem;
+}
+.course-theme-provider[data-persona="precision"] section h3,
+.course-theme-provider[data-persona="precision"] .text-lg.font-semibold {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: var(--persona-heading-tracking);
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  border-bottom: 0.5px solid var(--border);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+.course-theme-provider[data-persona="precision"] .rounded-xl,
+.course-theme-provider[data-persona="precision"] .rounded-2xl {
+  border-radius: 0 !important;
+}
+.course-theme-provider[data-persona="precision"] aside,
+.course-theme-provider[data-persona="precision"] [class*="rounded"] {
+  border-width: 0.5px;
+  border-style: solid;
+}
+
+/* ─── Editorial: bold headlines, elevated cards, yellow accent ────────────── */
+.course-theme-provider[data-persona="editorial"] section h3,
+.course-theme-provider[data-persona="editorial"] .text-lg.font-semibold {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.5rem;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--foreground);
+}
+.course-theme-provider[data-persona="editorial"] .bg-card,
+.course-theme-provider[data-persona="editorial"] .border-border {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  border-color: var(--border) !important;
+}
+.course-theme-provider[data-persona="editorial"] aside {
+  border-left: 4px solid var(--primary) !important;
+  background: rgba(255, 225, 124, 0.08) !important;
+}
+
+/* ─── Authority: serif display, classic proportions ──────────────────────── */
+.course-theme-provider[data-persona="authority"] section h3,
+.course-theme-provider[data-persona="authority"] .text-lg.font-semibold {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.35rem;
+  letter-spacing: 0.01em;
+  color: var(--foreground);
+}
+.course-theme-provider[data-persona="authority"] .border-border {
+  border-color: var(--border) !important;
+}
+.course-theme-provider[data-persona="authority"] aside {
+  border-left: 3px solid var(--primary) !important;
+  font-style: normal;
+}
+
+/* ─── DevCore: monospace, terminal feel, flat blocks ──────────────────────── */
+.course-theme-provider[data-persona="devcore"] {
+  font-family: var(--font-display);
+}
+.course-theme-provider[data-persona="devcore"] section h3,
+.course-theme-provider[data-persona="devcore"] .text-lg.font-semibold {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+}
+.course-theme-provider[data-persona="devcore"] pre,
+.course-theme-provider[data-persona="devcore"] code {
+  font-family: var(--font-display) !important;
+  background: rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid var(--border);
+}
+.course-theme-provider[data-persona="devcore"] .bg-card {
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+
+/* ─── Verdant: soft radius, spacious, green accent ─────────────────────────── */
+.course-theme-provider[data-persona="verdant"] section h3,
+.course-theme-provider[data-persona="verdant"] .text-lg.font-semibold {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: var(--foreground);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+.course-theme-provider[data-persona="verdant"] .space-y-8 > * + * {
+  margin-top: 2.5rem;
+}
+.course-theme-provider[data-persona="verdant"] aside {
+  border-left: 4px solid var(--primary) !important;
+  background: rgba(0, 171, 142, 0.06) !important;
+  border-radius: 0 1rem 1rem 0 !important;
+}
+.course-theme-provider[data-persona="verdant"] .rounded-xl {
+  border-radius: 1rem !important;
+}
+.course-theme-provider[data-persona="verdant"] .rounded-2xl {
+  border-radius: 1.25rem !important;
+}

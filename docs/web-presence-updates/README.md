@@ -1,8 +1,8 @@
-# Web Presence Updates (ByteOS Achievements Plan)
+# Web Presence Updates (Sudar Achievements Plan)
 
-This folder contains the copy and instructions to update your external web presence so the world sees ByteOS, ByteVerse, and you clearly.
+This folder contains the copy and instructions to update your external web presence so the world sees Sudar, SudarVerse, and you clearly.
 
-**ByteOS repo changes** (README, UPDATES.md) have been applied in this repository. The items below are for repos you maintain separately.
+**Sudar repo changes** (README, UPDATES.md) have been applied in this repository. The items below are for repos you maintain separately.
 
 ---
 
@@ -18,8 +18,8 @@ This folder contains the copy and instructions to update your external web prese
 
 ## Quick links
 
-- **ByteOS (GitHub):** https://github.com/lorddannykay/ByteOS  
-- **ByteVerse (product):** https://byteverse.app  
+- **Sudar (GitHub, repo name ByteOS):** https://github.com/lorddannykay/ByteOS  
+- **SudarVerse (product):** https://byteverse.app  
 - **Portfolio:** https://dhanikeshkarunanithi.com  
 
-Apply the updates in each repo using the corresponding markdown file. No code changes are made to those repos from the ByteOS workspace; use the instructions and copy as provided.
+Apply the updates in each repo using the corresponding markdown file. No code changes are made to those repos from this workspace; use the instructions and copy as provided.

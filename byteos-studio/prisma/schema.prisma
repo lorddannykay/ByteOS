@@ -18,24 +18,26 @@ datasource db {
 // ============================================
 
 model Profile {
-  id                 String   @id @db.Uuid
-  fullName           String?  @map("full_name")
-  avatarUrl          String?  @map("avatar_url")
-  role               Role     @default(LEARNER)
-  orgId              String?  @map("org_id") @db.Uuid
-  onboardingComplete Boolean  @default(false) @map("onboarding_complete")
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at")
+  id                    String   @id @db.Uuid
+  fullName              String?  @map("full_name")
+  avatarUrl             String?  @map("avatar_url")
+  role                  Role     @default(LEARNER)
+  orgId                 String?  @map("org_id") @db.Uuid
+  onboardingComplete    Boolean  @default(false) @map("onboarding_complete")
+  requirePasswordChange Boolean  @default(false) @map("require_password_change")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at")
 
-  org              Organisation?   @relation(fields: [orgId], references: [id])
-  orgMemberships   OrgMember[]
-  learnerProfile   LearnerProfile?
-  coursesCreated   Course[]        @relation("CourseCreator")
-  pathsCreated     LearningPath[]  @relation("PathCreator")
-  enrollments      Enrollment[]
-  certifications   Certification[]
-  aiInteractions   AiInteraction[]
-  learningEvents   LearningEvent[]
+  org                Organisation?            @relation(fields: [orgId], references: [id])
+  orgMemberships     OrgMember[]
+  learnerProfile      LearnerProfile?
+  performanceRecords  LearnerPerformanceRecord[]
+  coursesCreated      Course[]                @relation("CourseCreator")
+  pathsCreated        LearningPath[]          @relation("PathCreator")
+  enrollments         Enrollment[]
+  certifications      Certification[]
+  aiInteractions      AiInteraction[]
+  learningEvents      LearningEvent[]
 
   @@map("profiles")
 }
@@ -63,12 +65,14 @@ model Organisation {
   plan      String   @default("free")
   createdAt DateTime @default(now()) @map("created_at")
 
-  profiles     Profile[]
-  members      OrgMember[]
-  courses      Course[]
-  skills       Skill[]
-  learningPaths LearningPath[]
-  branding_config OrgBranding?
+  profiles           Profile[]
+  members            OrgMember[]
+  courses            Course[]
+  skills             Skill[]
+  learningPaths      LearningPath[]
+  branding_config    OrgBranding?
+  performanceRecords LearnerPerformanceRecord[]
+  orgInvites         OrgInvite[]
 
   @@map("organisations")
 }
@@ -111,6 +115,19 @@ model OrgBranding {
   @@map("org_branding")
 }
 
+model OrgInvite {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  email     String
+  role      OrgRole  @default(LEARNER)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  org Organisation @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, email])
+  @@map("org_invites")
+}
+
 // ============================================
 // DIGITAL LEARNER TWIN
 // ============================================
@@ -136,6 +153,30 @@ model LearnerProfile {
   profile Profile @relation(fields: [userId], references: [id])
 
   @@map("learner_profiles")
+}
+
+// ============================================
+// LEARNER PERFORMANCE DATA (institution-aware)
+// ============================================
+
+model LearnerPerformanceRecord {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId        String    @map("org_id") @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  sourceType   String    @map("source_type")   // 'kpi' | 'grade' | 'custom'
+  key          String    @map("key")          // KPI id or exam/term id from org performance_config
+  value        Decimal   @db.Decimal(12, 4)
+  valueDisplay String?   @map("value_display") // optional letter grade / label
+  periodStart  DateTime? @map("period_start") @db.Date
+  periodEnd    DateTime? @map("period_end")   @db.Date
+  recordedAt   DateTime  @default(now()) @map("recorded_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  org    Organisation @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  profile Profile     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, userId, sourceType, key, periodStart])
+  @@map("learner_performance_records")
 }
 
 // ============================================

@@ -16,7 +16,7 @@
 \title{From Course Hosting to Adaptive Learning: An AI-Native Platform and Plugin Architecture for Learner Memory and Multimodal Delivery}
 \author{
   Dhanikesh Karunanithi\\
-  \texttt{ByteOS / ALP Project}\\
+  \texttt{Sudar / ALP Project}\\
   \url{https://github.com/lorddannykay/ByteOS}
 }
 \date{2026}
@@ -119,7 +119,7 @@ Learning paths support mandatory and optional courses and unlock rules (complete
 \subsection{Plugin Architecture for Existing LMSs (ALP)}
 \label{sec:alp}
 
-The \textbf{Adaptive Learning Layer (ALP)} is the design by which the same capabilities can be offered to existing LMSs without replacing them. Conceptually, ALP comprises: (1) a \textbf{learner model API} that maintains or syncs a longitudinal profile from LMS events; (2) a \textbf{tutor service} that uses that profile and course content for memory-aware Q\&A and nudges; (3) a \textbf{modality layer} that can deliver or recommend alternative formats for content already in the LMS. Integration points: the LMS sends learning events and (optionally) content references to ALP; ALP returns next-best-action, tutor responses, and modality recommendations. To our knowledge, no widely adopted technology today adds longitudinal learner model and memory-aware tutoring to incumbent LMSs in a pluggable way; ALP is designed to fill that gap. The reference platform serves as the proof-of-concept and open-source reference for ALP.\footnote{Reference implementation: ByteOS, \url{https://github.com/lorddannykay/ByteOS}.} Figure~\ref{fig:alp} illustrates the ALP concept: existing LMSs keep hosting content and enrollments; ALP adds learner model, tutor, and modality layer via APIs and events.
+The \textbf{Adaptive Learning Layer (ALP)} is the design by which the same capabilities can be offered to existing LMSs without replacing them. Conceptually, ALP comprises: (1) a \textbf{learner model API} that maintains or syncs a longitudinal profile from LMS events; (2) a \textbf{tutor service} that uses that profile and course content for memory-aware Q\&A and nudges; (3) a \textbf{modality layer} that can deliver or recommend alternative formats for content already in the LMS. Integration points: the LMS sends learning events and (optionally) content references to ALP; ALP returns next-best-action, tutor responses, and modality recommendations. To our knowledge, no widely adopted technology today adds longitudinal learner model and memory-aware tutoring to incumbent LMSs in a pluggable way; ALP is designed to fill that gap. The reference platform serves as the proof-of-concept and open-source reference for ALP.\footnote{Reference implementation: Sudar (repository: \url{https://github.com/lorddannykay/ByteOS}).} Figure~\ref{fig:alp} illustrates the ALP concept: existing LMSs keep hosting content and enrollments; ALP adds learner model, tutor, and modality layer via APIs and events.
 \begin{figure}[t]
 \centering
 \resizebox{0.85\columnwidth}{!}{%
@@ -175,7 +175,7 @@ Our goal is to make learning accessible and adaptive at scale---both through the
 We presented an AI-native learning system with two contributions: a reference platform that combines authoring, delivery, and intelligence with a Digital Learner Twin, adaptive sequencing, multimodal delivery, and an AI tutor with longitudinal memory; and the Adaptive Learning Layer (ALP), an architecture for deploying these capabilities as a layer on top of existing LMSs. The reference implementation is open source and evidence-informed. We invite collaboration from institutions and organizations so that learning can become accessible and adaptive for everyone.
 
 \section*{Acknowledgments}
-The system and research are the authors' project. The reference implementation is available at \url{https://github.com/lorddannykay/ByteOS} with documentation (ECOSYSTEM.md, RESEARCH\_FOUNDATION.md, docs/sudar-memory.md).
+The system and research are the authors' project. The reference implementation is available at \url{https://github.com/lorddannykay/ByteOS} with documentation (ECOSYSTEM.md, RESEARCH\_FOUNDATION.md, docs/sudar-memory.md). The platform is named Sudar.
 
 \appendix
 \section{Schema summary}

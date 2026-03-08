@@ -6,6 +6,8 @@ const USER_EDITABLE_KEYS = [
   'self_reported_background',
   'learning_goals',
   'preferred_explanation_style',
+  'preferred_response_length',
+  'modality_preference',
   'learning_frequency',
   'difficulty_comfort',
   'onboarding_complete',
@@ -46,4 +48,20 @@ export async function PATCH(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
+}
+
+export async function GET() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const admin = createAdminClient()
+  const { data: profile } = await admin
+    .from('learner_profiles')
+    .select('ai_tutor_context')
+    .eq('user_id', user.id)
+    .single()
+
+  const memory = (profile?.ai_tutor_context as Record<string, unknown>) ?? {}
+  return NextResponse.json({ memory })
 }

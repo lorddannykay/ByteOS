@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Premium LMS: display font */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+
 /* Design tokens: radius (curved edges) */
 :root {
   --radius-card: 1rem;    /* 16px - bento containers */
@@ -10,6 +13,10 @@
   --radius-lg: 1.25rem;   /* 20px - larger cards */
   --radius-xl: 1.5rem;    /* 24px - hero / panels */
   --radius-shell: 1.75rem; /* 28px - outer app container */
+  --radius-4xl: 2.5rem;   /* premium */
+  --radius-5xl: 3.5rem;
+  --radius-6xl: 5rem;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
 
   /* Reference palette: BARBR (orange, yellow, teal, blue, pink) + Zywa (neon pink, lime, blue) + wireframe purple/lime */
   --shell-bg: #e5e7eb;    /* grey-200 - outside curved container */
@@ -86,10 +93,26 @@ body {
   background: var(--shell-bg);
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+/* Logo mask: fill logo shape with current primary (theme/palette) */
+.logo-mask-light {
+  -webkit-mask-image: url('/sudar-logo-light.png');
+  mask-image: url('/sudar-logo-light.png');
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+.logo-mask-dark {
+  -webkit-mask-image: url('/sudar-logo-dark.png');
+  mask-image: url('/sudar-logo-dark.png');
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
 /* Scrollbar styling */
@@ -105,4 +128,148 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted-foreground);
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Insight carousel card patterns (Memory page) */
+.insight-pattern {
+  background-size: 100px 100px;
+  background-position: 0 0, 50px 50px;
+}
+.pattern-1 {
+  background-color: var(--primary);
+  background-image: radial-gradient(circle at 30% 70%, rgba(255,255,255,0.25) 0%, transparent 50%),
+    radial-gradient(circle at 70% 30%, rgba(255,255,255,0.15) 0%, transparent 40%);
+}
+.pattern-2 {
+  background: linear-gradient(135deg, var(--muted) 25%, transparent 25%),
+    linear-gradient(225deg, var(--primary) 25%, transparent 25%, transparent 75%, var(--primary) 75%);
+  background-size: 50px 50px;
+}
+.pattern-3 {
+  background: conic-gradient(from 0deg at 50% 50%, var(--primary) 0deg 90deg, var(--muted) 90deg 180deg, var(--primary) 180deg 270deg, var(--muted) 270deg 360deg);
+  background-size: 60px 60px;
+}
+.pattern-4 {
+  background-color: var(--muted);
+  background-image: radial-gradient(var(--primary) 12%, transparent 12%),
+    radial-gradient(var(--primary) 12%, transparent 12%);
+  background-size: 80px 80px;
+  background-position: 0 0, 40px 40px;
+}
+.pattern-5 {
+  background: radial-gradient(circle at 50% 50%, transparent 25%, var(--warning) 26% 35%, transparent 36%);
+  background-color: var(--warning-muted);
+  background-size: 50px 50px;
+}
+.pattern-6 {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 50%, var(--primary) 100%);
+  background-size: 120px 100%;
+  opacity: 0.9;
+}
+.pattern-7 {
+  background: radial-gradient(ellipse 80% 50% at 50% 50%, var(--accent) 0%, transparent 70%);
+  background-color: var(--accent-muted);
+}
+.pattern-8 {
+  background: linear-gradient(45deg, var(--card) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--primary) 25%, transparent 25%, transparent 75%, var(--primary) 75%);
+  background-size: 40px 40px;
+  background-color: var(--muted);
+}
+.pattern-9 {
+  background: linear-gradient(180deg, var(--primary) 0%, transparent 50%),
+    radial-gradient(circle at 20% 80%, var(--accent) 0%, transparent 40%);
+  background-color: var(--muted);
+}
+.pattern-10 {
+  background: linear-gradient(135deg, var(--success) 0%, transparent 60%),
+    var(--success-muted);
+}
+
+/* ---------- Premium LMS design system (liquid-glass, hero, kpi) ---------- */
+.hero-block {
+  @apply relative overflow-hidden flex-1 shadow-sm min-h-[300px];
+  border-radius: var(--radius-5xl);
+  background: var(--muted);
+}
+
+.side-item {
+  @apply relative overflow-hidden transition-transform duration-300 cursor-pointer;
+  border-radius: 2.5rem;
+  height: 190px;
+  background: var(--muted);
+}
+.side-item:hover {
+  transform: scale(1.02);
+}
+
+.glass-pill {
+  @apply backdrop-blur-md rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-wider;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+.action-button {
+  @apply px-8 py-4 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95;
+  background: var(--card);
+  color: var(--card-foreground);
+}
+.action-button:hover {
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+}
+
+.liquid-glass {
+  @apply backdrop-blur-2xl shadow-2xl;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 3rem;
+}
+
+.chat-bubble {
+  @apply p-4 rounded-3xl text-sm font-medium max-w-[80%];
+}
+
+.modal-overlay {
+  @apply fixed inset-0 backdrop-blur-md z-50 flex items-center justify-center p-8;
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.modal-content {
+  @apply shadow-2xl max-w-2xl w-full p-12 relative overflow-hidden;
+  background: var(--card);
+  color: var(--card-foreground);
+  border-radius: 3rem;
+}
+
+.kpi-card {
+  @apply flex flex-col justify-between transition-all;
+  padding: 2.5rem;
+  border-radius: var(--radius-5xl);
+  background: var(--muted);
+  border: 1px solid var(--border);
+}
+.kpi-card:hover {
+  background: var(--card);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+}
+
+.node-connector {
+  @apply absolute h-1 origin-left;
+  background: var(--primary);
+  opacity: 0.2;
+}
+
+.node-circle {
+  @apply w-16 h-16 rounded-full shadow-lg flex items-center justify-center z-10 relative;
+  background: var(--card);
+  border: 4px solid var(--primary);
 }

@@ -22,7 +22,7 @@ export default async function CertificatePage({ params }: { params: { code: stri
   const courseCount = Array.isArray(cert.path?.courses) ? cert.path.courses.length : 0
   const pathTitle = cert.path_title ?? cert.path?.title ?? 'Learning Path'
   const recipientName = cert.recipient_name ?? 'Learner'
-  const orgName = cert.org_name ?? 'ByteOS'
+  const orgName = cert.org_name ?? 'Sudar'
 
   return (
     <>
@@ -94,14 +94,14 @@ export default async function CertificatePage({ params }: { params: { code: stri
 
         {/* Footer */}
         <div className="border-t border-border px-10 py-5">
-          <p className="text-xs text-muted-foreground">Powered by <span className="font-semibold text-card-foreground">ByteOS</span> — Learning with you, for you.</p>
+          <p className="text-xs text-muted-foreground">Powered by <span className="font-semibold text-card-foreground">Sudar</span> — Learning with you, for you.</p>
         </div>
       </div>
 
       <CertActions />
 
       <p className="print:hidden text-muted-foreground text-xs mt-4">
-        <Link href="/" className="hover:text-muted-foreground transition-colors">← Back to ByteOS</Link>
+        <Link href="/" className="hover:text-muted-foreground transition-colors">← Back to Sudar</Link>
       </p>
     </div>
     </>

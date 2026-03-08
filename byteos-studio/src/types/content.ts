@@ -3,6 +3,31 @@
  * Used when generating and writing module content Json; matches Learn content.ts.
  */
 
+/** Lesson structural archetype. */
+export type LessonArchetype = 'cold-open' | 'socratic' | 'misconception-trap' | 'case-file' | 'comparison-engine'
+
+/** Entry state types for lesson openers. */
+export type EntryStateType = 'provocation' | 'data-drop' | 'scenario-fragment' | 'contrarian-claim'
+
+/** Exit state types for lesson closers. */
+export type ExitStateType = 'reflection' | 'apply-24h' | 'next-conflict-teaser' | 'what-changed'
+
+export interface EntryState {
+  type: EntryStateType
+  content: string
+}
+
+export interface ExitState {
+  type: ExitStateType
+  content: string
+}
+
+/** Side note voice types. */
+export type SideNoteType = 'wait-but-why' | 'real-world' | 'brain-moment' | 'expert-voice' | 'rabbit-hole'
+
+/** Quiz mode for quiz elements. */
+export type QuizMode = 'standard' | 'predict-then-learn' | 'confidence-tagged' | 'scenario-fork' | 'peer-contrast'
+
 export interface TextContent {
   type: 'text'
   body: string
@@ -19,16 +44,21 @@ export interface RichContentSection {
 export interface RichInteractiveElement {
   type: 'quiz' | 'expandable' | 'code-demo' | 'diagram' | 'video' | 'audio' | 'flashcard' | 'timeline' | 'flipcard' | 'hotspot' | 'matching' | 'tabs'
   data: Record<string, unknown>
+  quizMode?: QuizMode
 }
 
 export interface RichSideCard {
   title: string
   content: string
   tips?: string[]
+  noteType?: SideNoteType
 }
 
 export interface RichContent {
   type: 'rich'
+  archetype?: LessonArchetype
+  entryState?: EntryState
+  exitState?: ExitState
   introduction?: string
   sections: RichContentSection[]
   summary?: string
@@ -36,7 +66,22 @@ export interface RichContent {
   sideCard?: RichSideCard
 }
 
-export type ModuleContent = TextContent | RichContent
+/** SCORM 1.2 hosted module — rendered via iframe with API shim */
+export interface ScormContent {
+  type: 'scorm'
+  launch_url: string
+  /** SCORM package root URL (for resolving relative assets). Equals launch_url dir by default. */
+  package_base?: string
+  scorm_version?: '1.2' | '2004'
+  /** Extracted plain-text from the SCO HTML files — used as Sudar's knowledge base for this module */
+  scorm_text_content?: string
+}
+
+export type ModuleContent = TextContent | RichContent | ScormContent
+
+export function isScormContent(content: unknown): content is ScormContent {
+  return typeof content === 'object' && content !== null && (content as ScormContent).type === 'scorm'
+}
 
 export function isRichContent(content: unknown): content is RichContent {
   return (

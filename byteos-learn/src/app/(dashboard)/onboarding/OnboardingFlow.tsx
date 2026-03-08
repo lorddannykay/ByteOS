@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bot, ChevronRight, CheckCircle2, Loader2, Zap, User, Target, BookOpen, Lightbulb } from 'lucide-react'
+import { ChevronRight, CheckCircle2, Loader2, Zap, User, Target, BookOpen, Lightbulb } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -100,7 +100,7 @@ export function OnboardingFlow({ firstName, existingMemory }: Props) {
         {step === 0 && (
           <div className="text-center space-y-6">
             <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center mx-auto shadow-xl shadow-md">
-              <Bot className="w-10 h-10 text-primary-foreground" />
+              <img src="/sudar-chat-logo.png" className="w-10 h-10 object-contain brightness-0 invert" alt="Sudar" />
             </div>
             <div className="space-y-3">
               <h1 className="text-2xl font-bold text-card-foreground">Hi {firstName}, I&apos;m Sudar</h1>

@@ -3,7 +3,7 @@
  * Used by generate-course and generate-all-modules to recommend interactive components per module.
  */
 
-import type { RichInteractiveElement } from '@/types/content'
+import type { RichInteractiveElement, QuizMode } from '@/types/content'
 
 export type ComponentType =
   | 'timeline'
@@ -190,7 +190,23 @@ Return JSON with 1-3 components (use "components" array). Only use types from th
   }
 }
 
-/** Convert SelectedComponent[] to RichInteractiveElement[]. */
-export function toInteractiveElements(components: SelectedComponent[]): RichInteractiveElement[] {
-  return components.map((c) => ({ type: c.type as RichInteractiveElement['type'], data: c.data }))
+/** Suggest quiz mode from Bloom's level: Apply → scenario-fork, Remember → predict-then-learn, etc. */
+export function getSuggestedQuizMode(bloomLevel: string): QuizMode {
+  const level = bloomLevel.trim()
+  if (level === 'Apply') return 'scenario-fork'
+  if (level === 'Remember') return 'predict-then-learn'
+  if (level === 'Understand') return 'confidence-tagged'
+  if (level === 'Evaluate' || level === 'Analyze') return 'peer-contrast'
+  return 'standard'
+}
+
+/** Convert SelectedComponent[] to RichInteractiveElement[]. Optionally set quizMode for quiz elements from bloomLevel. */
+export function toInteractiveElements(components: SelectedComponent[], bloomLevel?: string): RichInteractiveElement[] {
+  return components.map((c) => {
+    const el: RichInteractiveElement = { type: c.type as RichInteractiveElement['type'], data: c.data }
+    if (c.type === 'quiz' && bloomLevel) {
+      el.quizMode = getSuggestedQuizMode(bloomLevel)
+    }
+    return el
+  })
 }

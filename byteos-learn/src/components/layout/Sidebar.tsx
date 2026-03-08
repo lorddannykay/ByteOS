@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard,
@@ -49,12 +48,14 @@ export function Sidebar({ user }: SidebarProps) {
         className="flex flex-col items-center gap-1.5 px-3 py-5 border-b border-border"
       >
         <div className="relative h-10 w-10 shrink-0">
-          <Image
-            src="/sudar-logo.png"
-            alt="Sudar"
-            fill
-            className="object-contain"
-            sizes="40px"
+          <span className="sr-only">Sudar</span>
+          <div
+            className="absolute inset-0 bg-primary block dark:hidden logo-mask-light"
+            aria-hidden
+          />
+          <div
+            className="absolute inset-0 bg-primary hidden dark:block logo-mask-dark"
+            aria-hidden
           />
         </div>
         <span className="text-[10px] font-semibold text-primary leading-tight">

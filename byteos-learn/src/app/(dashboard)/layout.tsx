@@ -1,8 +1,13 @@
+import dynamic from 'next/dynamic'
 import { redirect } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { Header } from '@/components/layout/Header'
-import { Sidebar } from '@/components/layout/Sidebar'
+import { TopNav } from '@/components/layout/TopNav'
 import { PageTransition } from '@/components/ui/PageTransition'
+
+const FloatingSudarChat = dynamic(
+  () => import('@/components/tutor/FloatingSudarChat').then((m) => m.FloatingSudarChat),
+  { ssr: false }
+)
 
 export default async function DashboardLayout({
   children,
@@ -22,9 +27,13 @@ export default async function DashboardLayout({
   const admin = createAdminClient()
 
   const [{ data: profile }, { data: learnerProfile }] = await Promise.all([
-    supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).single(),
+    supabase.from('profiles').select('full_name, avatar_url, require_password_change').eq('id', user.id).single(),
     admin.from('learner_profiles').select('ai_tutor_context').eq('user_id', user.id).single(),
   ])
+
+  if (profile?.require_password_change) {
+    redirect('/change-password')
+  }
 
   // Redirect new learners to onboarding if they haven't completed it yet.
   // Skip this redirect if they're already on the onboarding page.
@@ -38,18 +47,16 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-shell py-4 px-4 md:py-6 md:px-6">
-      <div className="max-w-[1600px] mx-auto rounded-shell overflow-hidden shadow-xl bg-background border border-border min-h-[calc(100vh-2rem)] flex">
-        <Sidebar user={userProps} />
-        <div className="flex-1 flex flex-col min-w-0">
-          <Header
-            user={userProps}
-            showOnboardingNudge={!onboardingDone}
-          />
-          <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8">
-            <PageTransition>{children}</PageTransition>
-          </main>
-        </div>
+    <div className="min-h-screen bg-shell">
+      <div className="max-w-[1600px] mx-auto min-h-screen flex flex-col rounded-shell overflow-hidden shadow-xl bg-background border border-border md:my-4 md:min-h-[calc(100vh-2rem)]">
+        <TopNav
+          user={userProps}
+          showOnboardingNudge={!onboardingDone}
+        />
+        <main className="flex-1 overflow-y-auto px-4 md:px-8 py-6 md:py-8">
+          <PageTransition>{children}</PageTransition>
+        </main>
+        <FloatingSudarChat />
       </div>
     </div>
   )

@@ -16,14 +16,14 @@ export default async function DashboardLayout({
 
   if (!user) redirect('/login')
 
-  // Ensure user always has an org (creates one on first visit)
-  await getOrCreateOrg(user.id)
+  const orgId = await getOrCreateOrg(user.id)
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, avatar_url')
-    .eq('id', user.id)
-    .single()
+  const [{ data: profile }, { data: membership }] = await Promise.all([
+    supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).single(),
+    supabase.from('org_members').select('role').eq('org_id', orgId).eq('user_id', user.id).single(),
+  ])
+
+  const orgRole = membership?.role ?? 'LEARNER'
 
   return (
     <DashboardShell
@@ -32,6 +32,7 @@ export default async function DashboardLayout({
         full_name: profile?.full_name,
         avatar_url: profile?.avatar_url,
       }}
+      orgRole={orgRole}
     >
       {children}
     </DashboardShell>

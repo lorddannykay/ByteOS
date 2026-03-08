@@ -1,4 +1,4 @@
-// ByteOS — Supabase Database Types (shared with byteos-studio)
+// Sudar — Supabase Database Types (shared with byteos-studio)
 // Stub until: npx supabase gen types typescript --project-id qnsrrboprydmjyormlky
 
 export type Json =
@@ -20,6 +20,7 @@ export type Database = {
           role: Database['public']['Enums']['role']
           org_id: string | null
           onboarding_complete: boolean
+          require_password_change: boolean
           created_at: string
           updated_at: string
         }
@@ -30,6 +31,7 @@ export type Database = {
           role?: Database['public']['Enums']['role']
           org_id?: string | null
           onboarding_complete?: boolean
+          require_password_change?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -39,8 +41,15 @@ export type Database = {
           role?: Database['public']['Enums']['role']
           org_id?: string | null
           onboarding_complete?: boolean
+          require_password_change?: boolean
           updated_at?: string
         }
+        Relationships: []
+      }
+      org_invites: {
+        Row: { id: string; org_id: string; email: string; role: string; created_at: string }
+        Insert: { id?: string; org_id: string; email: string; role?: string; created_at?: string }
+        Update: { org_id?: string; email?: string; role?: string; created_at?: string }
         Relationships: []
       }
       learner_profiles: {
@@ -289,6 +298,40 @@ export type Database = {
           proficiency_level?: number
           evidence_count?: number
           last_assessed_at?: string | null
+        }
+        Relationships: []
+      }
+      content_chunks: {
+        Row: {
+          id: string
+          course_id: string | null
+          module_id: string | null
+          chunk_index: number
+          chunk_type: string
+          content: string
+          embedding: unknown
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          course_id?: string | null
+          module_id?: string | null
+          chunk_index?: number
+          chunk_type?: string
+          content: string
+          embedding: number[]
+          metadata?: Json
+          created_at?: string
+        }
+        Update: {
+          course_id?: string | null
+          module_id?: string | null
+          chunk_index?: number
+          chunk_type?: string
+          content?: string
+          embedding?: number[]
+          metadata?: Json
         }
         Relationships: []
       }

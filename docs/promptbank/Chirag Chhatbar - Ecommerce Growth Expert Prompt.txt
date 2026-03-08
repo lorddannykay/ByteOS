@@ -1,0 +1,53 @@
+# Summary
+
+Professional and minimalist personal brand website for an expert consultant. Uses a deep navy background with gold metallic highlights, serif typography for authority, and structured data-driven sections to establish credibility.
+
+# Style
+
+The style essence is 'Modern Authority'. It uses a dark palette (#0a0f1e) contrasted with a primary gold accent (#d4af37) and a secondary soft gold gradient. Typography pairings use Playfair Display for high-impact headings to convey traditional authority, and Inter for clean, readable body text. Animations are subtle 'fadeInUp' transitions (0.8s) with soft ease-out curves. Components feature thin 1px borders, subtle backdrop blurs, and localized gold-tinted box shadows on hover.
+
+## Spec
+
+Create a design system with a primary background of #0a0f1e. Accent color is Gold (#d4af37) with a gradient defined as `linear-gradient(135deg, #d4af37 0%, #f4e4a6 100%)`. Typography: Headings in 'Playfair Display' (weights 600, 700), Body in 'Inter' (weights 300 to 700). Interactive elements should use a 0.3s transition. Primary buttons should use the gold-gradient with #0a0f1e text. Secondary buttons are transparent with 2px #d4af37 borders. Hover states for cards should include a subtle lift (translateY -5px) and a gold glow shadow: `0 10px 40px rgba(212, 175, 55, 0.2)`. Borders for secondary containers should be #1f2937 or gold/20 for emphasis.
+
+# Layout & Structure
+
+The layout follows a vertical storytelling structure: high-impact hero with social proof metrics, founder narrative, service offerings grid, detailed case studies, and a multi-channel contact section.
+
+## Navigation Bar
+
+A fixed top navigation bar with a height of approx 80px. Background is #0a0f1e at 95% opacity with a backdrop-blur effect and a 1px border-b of #1f2937. Left-aligned logo in Gold Playfair Display. Center-aligned links in Inter (text-sm, text-gray-300). Right-aligned 'Book a Call' CTA button with a thin gold border.
+
+## Hero Section
+
+Center-aligned hero section. Top element: a rounded pill-shaped badge with text 'Expert • 18+ Years' in gold. Headline: 'Playfair Display' font-size 72px, bold, with key phrases highlighted in gold. Subheadline: text-xl gray-400. Action block: two side-by-side buttons (one gradient-filled, one outlined gold). Below the action block, a grid of 4 metric cards (bento style) showing large gold numbers (e.g., revenue, years) and small uppercase labels.
+
+## About Section
+
+Two-column layout. Left column: narrative text with line-height 1.6, using gold for emphasis on mission statements. Right column: a stack of 3 feature cards, each with a gold icon, a bold title, and a subtle left-border accent of 4px solid #d4af37.
+
+## Services Grid
+
+3-column grid of service cards. Each card has a background of #141b2e, a 1px gray-800 border that turns gold/50 on hover, and a 56px gold-tinted icon box. Include a title, a short description, and a 3-item checkmark list using gold icons.
+
+## Case Studies
+
+Featured project card takes full width with a 2px gold/30 border. Includes a distinct 'Featured Project' pill badge, a 4-column sub-grid of specific metrics (large gold text), and a bulleted list of 'Key Achievements'. Secondary projects are 2-column cards with icon-led headers and metric labels.
+
+## Contact & Lead Gen
+
+A 3-card horizontal layout for direct contact (Email, WhatsApp, Calendly) with large gold icons. Below this, a focused form container with #0a0f1e inputs, gray-700 borders (gold on focus), and a full-width gold-gradient submit button.
+
+# Special Components
+
+## Stat Card
+
+High-impact metric display component.
+
+A card with `bg-gradient-to-br from-[#141b2e] to-[#0a0f1e]`, 32px padding, and 8px border-radius. Features a 1px border (#d4af37 at 20% opacity). The main number is 'Playfair Display' 48px, bold, color #d4af37. The label is 12px Inter, uppercase, tracking-wider, color gray-400. On hover, the card lifts 5px and gains a soft gold glow.
+
+## Expertise Pill Tags
+
+Skill visualization tags.
+
+Horizontal flex-wrap container of rounded-full pills. Background #141b2e, 1px border #d4af37/30, text-gray-300, padding 10px 20px. Hover state changes background to #d4af37/10.

@@ -55,7 +55,7 @@ async function extractTextFromBuffer(buffer: Buffer, mimeType: string): Promise<
 }
 
 async function extractTextFromUrl(url: string): Promise<string> {
-  const res = await fetch(url, { headers: { 'User-Agent': 'ByteOS/1' } })
+  const res = await fetch(url, { headers: { 'User-Agent': 'Sudar/1' } })
   if (!res.ok) throw new Error(`Failed to fetch URL: ${res.status}`)
   const html = await res.text()
   const stripped = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '')

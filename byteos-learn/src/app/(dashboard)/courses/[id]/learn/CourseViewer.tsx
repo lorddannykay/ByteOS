@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight,
-  BookOpen, List, X, Sparkles, Send, Loader2, Bot,
+  BookOpen, List, X, Sparkles, Send, Loader2,
   ChevronDown, FileText, Video, Headphones, Network,
   Layers, Zap, MessageSquarePlus, Code, Quote, Pin, PinOff, PanelLeftClose
 } from 'lucide-react'
@@ -13,9 +13,13 @@ import { cn } from '@/lib/utils'
 import { QuizCard } from './QuizCard'
 import { FlashcardsCard, type FlashcardPair } from './FlashcardsCard'
 import { RichModuleContent } from '@/components/learn/RichModuleContent'
-import { isRichContent, type RichContent } from '@/types/content'
+import { CourseThemeProvider } from '@/components/learn/CourseThemeProvider'
+import { GenerativeBlockRenderer } from '@/components/tutor/GenerativeBlockRenderer'
+import { ChatMarkdown } from '@/components/tutor/ChatMarkdown'
+import { isRichContent, isScormContent, type RichContent } from '@/types/content'
+import type { TutorAction, TutorBlock } from '@/types/tutor'
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// --- Types ------------------------------------------------------------------
 
 interface QuizQuestion {
   id: string
@@ -37,6 +41,7 @@ interface Module {
 interface Course {
   id: string
   title: string
+  template?: string | null
   modules: Module[]
   settings?: {
     module_completion?: Record<string, { type: 'mark_button' | 'min_time'; min_time_secs?: number }>
@@ -46,7 +51,21 @@ interface Course {
 interface Message {
   role: 'user' | 'assistant'
   content: string
+  /** When true, this message was sent with text selected on the page — Sudar used it as context */
+  referencedSelection?: boolean
+  confirmations?: { key: string; value: string; label: string }[]
+  summary?: string
+  actions?: TutorAction[]
+  blocks?: TutorBlock[]
 }
+
+interface TutorQueryData {
+  response?: string
+  error?: string
+  actions?: TutorAction[]
+  blocks?: TutorBlock[]
+}
+
 
 interface PersonalizedWelcome {
   message: string
@@ -86,7 +105,174 @@ function getContentBodyForFlashcards(content: Module['content']): string {
   return ''
 }
 
-// ─── Markdown renderer ───────────────────────────────────────────────────────
+// --- SCORM iframe viewer -----------------------------------------------------
+
+interface ScormViewerProps {
+  launchUrl: string
+  courseId: string
+  moduleId: string
+  moduleTitle: string
+  onComplete?: () => void
+}
+
+/** Convert a stored launch_url to a same-origin proxy URL.
+ *  Handles both legacy full-URL imports and current storage-path imports. */
+function scormProxyUrl(launchUrl: string): string {
+  if (!launchUrl) return ''
+  if (launchUrl.startsWith('/api/scorm/')) return launchUrl
+  if (launchUrl.startsWith('http')) {
+    const match = launchUrl.match(/\/course-media\/(.+)$/)
+    if (match) return `/api/scorm/${match[1]}`
+    return launchUrl
+  }
+  return `/api/scorm/${launchUrl}`
+}
+
+function ScormViewer({ launchUrl, courseId, moduleId, moduleTitle, onComplete }: ScormViewerProps) {
+  const [scormStatus, setScormStatus] = React.useState<string | null>(null)
+  const [scormScore, setScormScore] = React.useState<string | null>(null)
+  const startTimeRef = React.useRef(Date.now())
+  const completedRef = React.useRef(false)
+
+  React.useEffect(() => {
+    startTimeRef.current = Date.now()
+    completedRef.current = false
+    setScormStatus(null)
+    setScormScore(null)
+  }, [moduleId])
+
+  React.useEffect(() => {
+    function handleMessage(event: MessageEvent) {
+      const msg = event.data as {
+        type?: string
+        lesson_status?: string
+        name?: string
+        value?: string
+        data?: Record<string, string>
+      }
+      if (!msg?.type) return
+
+      if (msg.type === 'scorm_set_value') {
+        const { name, value } = msg
+
+        // Track status
+        if (name === 'cmi.core.lesson_status' && value) {
+          setScormStatus(value)
+          // Fire a progress event so the adaptive engine sees the status
+          fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event_type: 'scorm_progress',
+              course_id: courseId,
+              module_id: moduleId,
+              payload: { cmi_key: name, cmi_value: value, module_title: moduleTitle },
+            }),
+          }).catch(() => {})
+
+          if (value === 'completed' || value === 'passed') {
+            if (!completedRef.current) {
+              completedRef.current = true
+              onComplete?.()
+            }
+          }
+        }
+
+        // Track score for Sudar's memory
+        if (name === 'cmi.core.score.raw' && value) {
+          setScormScore(value)
+          fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event_type: 'scorm_progress',
+              course_id: courseId,
+              module_id: moduleId,
+              payload: { cmi_key: name, cmi_value: value, module_title: moduleTitle },
+            }),
+          }).catch(() => {})
+        }
+      }
+
+      if (msg.type === 'scorm_finish') {
+        const status = msg.lesson_status ?? 'completed'
+        const data = msg.data ?? {}
+        setScormStatus(status)
+        if (data['cmi.core.score.raw']) setScormScore(data['cmi.core.score.raw'])
+
+        const sessionSecs = Math.round((Date.now() - startTimeRef.current) / 1000)
+
+        // Fire a rich completion event — the intelligence engine reads this
+        // to understand the learner's performance on SCORM content
+        fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event_type: 'module_complete',
+            course_id: courseId,
+            module_id: moduleId,
+            modality: 'scorm',
+            duration_secs: sessionSecs,
+            payload: {
+              module_title: moduleTitle,
+              lesson_status: status,
+              score_raw: data['cmi.core.score.raw'] ?? null,
+              score_min: data['cmi.core.score.min'] ?? null,
+              score_max: data['cmi.core.score.max'] ?? null,
+              session_time: data['cmi.core.session_time'] ?? null,
+              suspend_data: data['cmi.suspend_data'] ?? null,
+            },
+          }),
+        }).catch(() => {})
+
+        if (!completedRef.current && (status === 'completed' || status === 'passed' || status === 'failed')) {
+          completedRef.current = true
+          onComplete?.()
+        }
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [courseId, moduleId, moduleTitle, onComplete])
+
+  const statusColor =
+    scormStatus === 'completed' || scormStatus === 'passed' ? 'text-green-500' :
+    scormStatus === 'failed' ? 'text-red-400' :
+    scormStatus === 'incomplete' ? 'text-amber-400' : 'text-muted-foreground'
+
+  return (
+    <div className="flex flex-col h-full w-full overflow-hidden">
+      {/* Compact SCORM status bar */}
+      <div className="shrink-0 flex items-center gap-3 px-4 py-1.5 bg-muted/40 border-b border-border text-xs">
+        <span className="text-muted-foreground">Interactive SCORM module</span>
+        {scormStatus && (
+          <span className={cn('flex items-center gap-1 font-medium', statusColor)}>
+            <CheckCircle2 className="w-3 h-3" />
+            {scormStatus}
+          </span>
+        )}
+        {scormScore && (
+          <span className="text-muted-foreground ml-auto">
+            Score: <span className="font-medium text-card-foreground">{scormScore}</span>
+          </span>
+        )}
+      </div>
+      {/* Iframe fills the remaining height exactly */}
+      <div className="flex-1 min-h-0 overflow-hidden bg-white">
+        <iframe
+          src={scormProxyUrl(launchUrl)}
+          className="w-full h-full block"
+          style={{ border: 'none' }}
+          allow="fullscreen"
+          title="SCORM content"
+        />
+      </div>
+    </div>
+  )
+}
+
+// --- Markdown renderer -------------------------------------------------------
 // Converts the AI-generated markdown text to clean, styled React elements.
 
 function renderMarkdown(body: string): React.ReactNode {
@@ -265,6 +451,64 @@ function renderMarkdown(body: string): React.ReactNode {
       continue
     }
 
+    // Markdown table (lines starting with |)
+    if (trimmed.startsWith('|')) {
+      const tableLines: string[] = []
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        tableLines.push(lines[i].trim())
+        i++
+      }
+      // Need at least a header + separator row
+      if (tableLines.length >= 2) {
+        const parseRow = (row: string) =>
+          row.replace(/^\||\|$/g, '').split('|').map((cell) => cell.trim())
+        const isSeparator = (row: string) => /^\|[-:| ]+\|$/.test(row)
+
+        const headerRow = tableLines[0]
+        const sepIdx = tableLines.findIndex(isSeparator)
+        if (sepIdx === 1) {
+          const headers = parseRow(headerRow)
+          const bodyRows = tableLines.slice(2)
+          elements.push(
+            <div key={nextKey()} className="my-4 overflow-x-auto rounded-xl border border-border shadow-sm">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-muted/70 border-b border-border">
+                    {headers.map((h, hi) => (
+                      <th key={hi} className="px-4 py-2.5 text-left text-xs font-semibold text-card-foreground uppercase tracking-wide whitespace-nowrap">
+                        {parseInline(h)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {bodyRows.map((row, ri) => (
+                    <tr key={ri} className={ri % 2 === 0 ? 'bg-card' : 'bg-muted/30'}>
+                      {parseRow(row).map((cell, ci) => (
+                        <td key={ci} className="px-4 py-2.5 text-card-foreground border-b border-border/50 leading-relaxed align-top">
+                          {parseInline(cell)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+          continue
+        }
+      }
+      // Fallback: render each table line as a paragraph
+      for (const tl of tableLines) {
+        elements.push(
+          <p key={nextKey()} className="text-card-foreground text-sm leading-relaxed my-3">
+            {parseInline(tl)}
+          </p>
+        )
+      }
+      continue
+    }
+
     // Regular paragraph
     elements.push(
       <p key={nextKey()} className="text-card-foreground text-sm leading-relaxed my-3">
@@ -277,7 +521,7 @@ function renderMarkdown(body: string): React.ReactNode {
   return <div className="space-y-0.5">{elements}</div>
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// --- Main component -----------------------------------------------------------
 
 export function CourseViewer({
   course,
@@ -334,7 +578,10 @@ export function CourseViewer({
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [thinking, setThinking] = useState(false)
+  const [learnerContext, setLearnerContext] = useState<Record<string, unknown> | null>(null)
+  const [contextPanelExpanded, setContextPanelExpanded] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const prevCourseIdRef = useRef<string>(course.id)
 
   // Text selection popup
   const [selectionPopup, setSelectionPopup] = useState<SelectionPopup | null>(null)
@@ -355,7 +602,7 @@ export function CourseViewer({
   const [elapsedActiveSecs, setElapsedActiveSecs] = useState(0)
   const canMarkCompleteByTime = minTimeSecs <= 0 || elapsedActiveSecs >= minTimeSecs
 
-  // ── Effects ──────────────────────────────────────────────────────────
+  // -- Effects ----------------------------------------------------------
   // Visibility: only count time as "active" when tab is visible
   useEffect(() => {
     function handleVisibility() {
@@ -410,7 +657,11 @@ export function CourseViewer({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ event_type: 'module_start', course_id: course.id, module_id: currentModuleId, modality: 'text' }),
     })
-    setMessages([])
+    // Clear chat only when switching to a different course; keep thread when moving between sections
+    if (prevCourseIdRef.current !== course.id) {
+      prevCourseIdRef.current = course.id
+      setMessages([])
+    }
   }, [currentModuleId, course.id])
 
   useEffect(() => {
@@ -448,49 +699,82 @@ export function CourseViewer({
       .finally(() => setFlashcardsLoading(false))
   }, [activeModality, currentModuleId, currentModule?.content?.body, currentModule?.title])
 
-  // Text selection handler
-  const handleSelection = useCallback(() => {
+  // Fetch learner context when tutor panel opens (for "What Sudar knows" summary)
+  useEffect(() => {
+    if (!tutorOpen) return
+    fetch('/api/tutor/memory')
+      .then((r) => r.json())
+      .then((data) => { if (data?.memory) setLearnerContext(data.memory as Record<string, unknown>) })
+      .catch(() => {})
+  }, [tutorOpen])
+
+  // Text selection handler — shared logic for both mouseup and contextmenu
+  const showSelectionPopup = useCallback((clientX?: number, clientY?: number) => {
     const selection = window.getSelection()
     if (!selection || selection.isCollapsed || !selection.toString().trim()) {
       setSelectionPopup(null)
-      return
+      return false
     }
     const text = selection.toString().trim()
-    if (text.length < 5 || text.length > 500) { setSelectionPopup(null); return }
+    if (text.length < 5 || text.length > 500) { setSelectionPopup(null); return false }
 
-    // Only trigger if inside the content area
-    if (contentRef.current) {
-      const range = selection.getRangeAt(0)
-      const container = range.commonAncestorContainer
-      if (!contentRef.current.contains(container)) { setSelectionPopup(null); return }
+    if (!contentRef.current) return false
+    const range = selection.getRangeAt(0)
+    const container = range.commonAncestorContainer
+    if (!contentRef.current.contains(container)) { setSelectionPopup(null); return false }
 
-      const rect = range.getBoundingClientRect()
-      // Use viewport coordinates for fixed positioning
-      // Clamp x so the popup never overflows the screen edges
+    const rect = range.getBoundingClientRect()
+    const estimatedHalfWidth = 340
+
+    let x: number
+    let y: number
+
+    if (clientX !== undefined && clientY !== undefined) {
+      // Right-click: position popup just above the cursor
+      x = Math.max(estimatedHalfWidth + 8, Math.min(window.innerWidth - estimatedHalfWidth - 8, clientX))
+      y = clientY - 8
+    } else {
+      // Left-click release: center over the selection
       const centerX = rect.left + rect.width / 2
-      const estimatedHalfWidth = 340
-      const clampedX = Math.max(
-        estimatedHalfWidth + 8,
-        Math.min(window.innerWidth - estimatedHalfWidth - 8, centerX)
-      )
-      setSelectionPopup({
-        text,
-        x: clampedX,
-        y: rect.top - 8,
-      })
+      x = Math.max(estimatedHalfWidth + 8, Math.min(window.innerWidth - estimatedHalfWidth - 8, centerX))
+      y = rect.top - 8
     }
+
+    setSelectionPopup({ text, x, y })
+    return true
   }, [])
+
+  const handleSelection = useCallback(() => {
+    showSelectionPopup()
+  }, [showSelectionPopup])
+
+  // Right-click on selected text: replace the browser context menu with the
+  // Sudar popup so learners can instantly ask questions about what they selected.
+  const handleContextMenu = useCallback((e: MouseEvent) => {
+    const selection = window.getSelection()
+    if (!selection || selection.isCollapsed || !selection.toString().trim()) return
+    if (!contentRef.current) return
+    try {
+      const range = selection.getRangeAt(0)
+      if (!contentRef.current.contains(range.commonAncestorContainer)) return
+    } catch { return }
+    // We have a real text selection inside content — take over
+    e.preventDefault()
+    showSelectionPopup(e.clientX, e.clientY)
+  }, [showSelectionPopup])
 
   useEffect(() => {
     document.addEventListener('mouseup', handleSelection)
     document.addEventListener('touchend', handleSelection)
+    document.addEventListener('contextmenu', handleContextMenu)
     return () => {
       document.removeEventListener('mouseup', handleSelection)
       document.removeEventListener('touchend', handleSelection)
+      document.removeEventListener('contextmenu', handleContextMenu)
     }
-  }, [handleSelection])
+  }, [handleSelection, handleContextMenu])
 
-  // ── Handlers ─────────────────────────────────────────────────────────
+  // -- Handlers ---------------------------------------------------------
   function navigateTo(moduleId: string) {
     setCurrentModuleId(moduleId)
     setSidebarOpen(false)
@@ -564,9 +848,26 @@ export function CourseViewer({
   async function handleTutorSend(overrideInput?: string) {
     const msg = (overrideInput ?? input).trim()
     if (!msg || thinking) return
+
+    // Capture selected content so Sudar can "read" what the learner is referring to
+    const selectedFromPopup = selectionPopup?.text
+    const selectedFromDoc =
+      typeof window !== 'undefined'
+        ? (() => {
+            const s = window.getSelection()
+            if (!s || s.isCollapsed) return null
+            const t = s.toString().trim()
+            return t.length >= 3 && t.length <= 8000 ? t : null
+          })()
+        : null
+    const selectedText = selectedFromPopup ?? selectedFromDoc ?? undefined
+
     setInput('')
     setSelectionPopup(null)
-    const newMessages: Message[] = [...messages, { role: 'user', content: msg }]
+    const newMessages: Message[] = [
+      ...messages,
+      { role: 'user', content: msg, referencedSelection: !!selectedText },
+    ]
     setMessages(newMessages)
     setThinking(true)
 
@@ -574,10 +875,16 @@ export function CourseViewer({
       const res = await fetch('/api/tutor/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, course_id: course.id, module_id: currentModuleId, conversation_history: messages }),
+        body: JSON.stringify({
+          message: msg,
+          course_id: course.id,
+          module_id: currentModuleId,
+          conversation_history: messages,
+          selected_text: selectedText,
+        }),
       })
       const text = await res.text()
-      let data: { response?: string; error?: string } = {}
+      let data: TutorQueryData = {}
       if (text) {
         try {
           data = JSON.parse(text)
@@ -595,6 +902,8 @@ export function CourseViewer({
       setMessages([...newMessages, {
         role: 'assistant',
         content: data.response ?? 'Sorry, I had trouble answering that. Please try again.',
+        actions: data.actions?.length ? data.actions : undefined,
+        blocks: data.blocks,
       }])
     } catch {
       setMessages([...newMessages, {
@@ -615,42 +924,135 @@ export function CourseViewer({
     setTimeout(() => handleTutorSend(prompt), 150)
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
+  async function handleQuickAction(quickActionKey: string) {
+    if (thinking) return
+    setThinking(true)
+    try {
+      const res = await fetch('/api/tutor/validate-memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quick_action_key: quickActionKey }),
+      })
+      const data = await res.json()
+      if (data.error || !data.confirmations?.length) {
+        setMessages((prev) => [...prev, { role: 'assistant', content: data.error ?? 'Could not load options. Try again.' }])
+        return
+      }
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: data.summary ?? 'Save this preference?',
+        confirmations: data.confirmations,
+        summary: data.summary,
+      }])
+    } catch {
+      setMessages((prev) => [...prev, { role: 'assistant', content: 'Unable to reach Sudar. Please try again.' }])
+    } finally {
+      setThinking(false)
+    }
+  }
+
+  async function handleConfirmation(messageIndex: number, key: string, value: string) {
+    if (value === 'cancel') {
+      setMessages((prev) => prev.map((m, i) => i === messageIndex && m.confirmations
+        ? { ...m, content: 'Cancelled.', confirmations: undefined, summary: undefined }
+        : m))
+      return
+    }
+    try {
+      const res = await fetch('/api/tutor/memory', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [key]: value }),
+      })
+      if (!res.ok) {
+        setMessages((prev) => prev.map((m, i) => i === messageIndex && m.confirmations
+          ? { ...m, content: 'Failed to save. Try again.', confirmations: undefined, summary: undefined }
+          : m))
+        return
+      }
+      const successMessages: Record<string, string> = {
+        one_line: "Got it, I'll keep answers to one line unless you ask for more.",
+        detailed: "Got it, I'll give you detailed responses.",
+        concise: "Got it, I'll keep answers concise.",
+        reading: "Got it, I'll remember you prefer reading.",
+        listening: "Got it, I'll remember you prefer listening.",
+        video: "Got it, I'll remember you prefer video.",
+        no_video: "Got it, I'll remember you didn't like this type of video.",
+      }
+      const successText = successMessages[value] ?? "Got it, I've saved that."
+      setMessages((prev) => prev.map((m, i) => i === messageIndex && m.confirmations
+        ? { ...m, content: successText, confirmations: undefined, summary: undefined }
+        : m))
+      setLearnerContext((prev) => (prev ? { ...prev, [key]: value } : { [key]: value }))
+    } catch {
+      setMessages((prev) => prev.map((m, i) => i === messageIndex && m.confirmations
+        ? { ...m, content: 'Failed to save. Try again.', confirmations: undefined, summary: undefined }
+        : m))
+    }
+  }
 
   return (
     <div className="flex bg-background overflow-hidden -mx-6 -mt-8 -mb-8 h-[calc(100vh-64px)]">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && <div className="fixed inset-0 bg-black/40 z-20 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
-      {/* Selection popup — fixed so it floats above overflow-hidden containers */}
-      {selectionPopup && (
-        <div
-          className="fixed z-[9999] bg-card border border-border rounded-xl shadow-2xl p-1 flex items-center gap-0.5 flex-wrap"
-          style={{ left: selectionPopup.x, top: selectionPopup.y, transform: 'translate(-50%, -100%)' }}
-        >
-          {[
-            { label: 'Explain this', icon: '💡' },
-            { label: 'Give me an example', icon: '🔍' },
-            { label: 'Why does this matter?', icon: '🎯' },
-            { label: 'Simplify this', icon: '✨' },
-          ].map(({ label, icon }) => (
-            <button
-              key={label}
-              onClick={() => sendToByteFromSelection(label)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-muted rounded-lg text-xs text-card-foreground font-medium transition-colors whitespace-nowrap"
-            >
-              <span>{icon}</span>{label}
-            </button>
-          ))}
-          <div className="w-px h-4 bg-border mx-1" />
-          <button
-            onClick={() => { setInput(`About "${selectionPopup.text.slice(0, 60)}${selectionPopup.text.length > 60 ? '…' : ''}": `); setTutorOpen(true); setSelectionPopup(null) }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-primary/50 rounded-lg text-xs text-primary font-medium transition-colors"
+      {/* Selection popup — fires on text selection (mouseup) or right-click on selection */}
+      {selectionPopup && (() => {
+        // Flip below the cursor if we're in the top 120px of the viewport
+        const flipBelow = selectionPopup.y < 120
+        return (
+          <div
+            className="fixed z-[9999] bg-card border border-border rounded-xl shadow-2xl overflow-hidden"
+            style={{
+              left: selectionPopup.x,
+              top: selectionPopup.y,
+              transform: flipBelow ? 'translate(-50%, 8px)' : 'translate(-50%, -100%)',
+              minWidth: '280px',
+              maxWidth: '460px',
+            }}
+            onMouseDown={(e) => e.preventDefault()} // keep selection alive while clicking buttons
           >
-            <MessageSquarePlus className="w-3.5 h-3.5" />Custom question
-          </button>
-        </div>
-      )}
+            {/* Selected text preview */}
+            <div className="px-3 pt-2.5 pb-1.5 border-b border-border/60 flex items-start gap-2">
+              <img src="/sudar-chat-logo.png" className="w-3.5 h-3.5 mt-0.5 opacity-70 shrink-0" alt="Sudar" />
+              <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2 italic">
+                &ldquo;{selectionPopup.text.slice(0, 120)}{selectionPopup.text.length > 120 ? '…' : ''}&rdquo;
+              </p>
+            </div>
+            {/* Action buttons */}
+            <div className="p-1 flex flex-wrap gap-0.5">
+              {[
+                { label: 'Explain this', icon: '💡' },
+                { label: 'Give me an example', icon: '🔍' },
+                { label: 'Why does this matter?', icon: '🎯' },
+                { label: 'Simplify this', icon: '✨' },
+                { label: 'Summarise', icon: '📝' },
+                { label: 'How does this connect to what I\'ve learned?', icon: '🔗' },
+              ].map(({ label, icon }) => (
+                <button
+                  key={label}
+                  onClick={() => sendToByteFromSelection(label)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-muted rounded-lg text-xs text-card-foreground font-medium transition-colors whitespace-nowrap"
+                >
+                  <span>{icon}</span>{label}
+                </button>
+              ))}
+              <div className="w-full h-px bg-border/60 my-0.5" />
+              <button
+                onClick={() => {
+                  const excerpt = selectionPopup.text.slice(0, 80) + (selectionPopup.text.length > 80 ? '…' : '')
+                  setInput('About "' + excerpt + '": ')
+                  setTutorOpen(true)
+                  setSelectionPopup(null)
+                }}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-primary/10 rounded-lg text-xs text-primary font-medium transition-colors w-full"
+              >
+                <MessageSquarePlus className="w-3.5 h-3.5" />Ask Sudar a custom question about this
+              </button>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Collapsed: show expand tab on desktop */}
       {sidebarCollapsed && (
@@ -746,8 +1148,8 @@ export function CourseViewer({
           <div className="h-4 w-px bg-muted" />
           <h1 className="text-sm font-semibold text-card-foreground truncate flex-1 min-w-0">{currentModule?.title}</h1>
 
-          {/* Modality switcher */}
-          <div className="hidden sm:flex items-center gap-0.5 bg-muted rounded-lg p-0.5 shrink-0">
+          {/* Modality switcher — hidden for SCORM modules */}
+          <div className={cn('hidden sm:flex items-center gap-0.5 bg-muted rounded-lg p-0.5 shrink-0', isScormContent(currentModule?.content) && '!hidden')}>
             {[
               { id: 'text', icon: FileText, label: 'Read' },
               { id: 'video', icon: Video, label: 'Watch', soon: true },
@@ -788,7 +1190,44 @@ export function CourseViewer({
         <div className="flex flex-1 min-h-0 overflow-hidden">
           {/* Module content + quiz */}
           <div className="flex flex-col min-h-0 overflow-hidden flex-1">
+
+            {/* ── SCORM: full-height iframe — no scroll wrapper, no max-width ── */}
+            {isScormContent(currentModule?.content) ? (
+              <>
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <ScormViewer
+                    launchUrl={currentModule.content.launch_url}
+                    courseId={course.id}
+                    moduleId={currentModuleId}
+                    moduleTitle={currentModule.title}
+                    onComplete={() => { if (!isCompleted) handleMarkComplete() }}
+                  />
+                </div>
+                {/* Compact SCORM bottom bar: prev / completion status / next */}
+                <div className="shrink-0 border-t border-border bg-background px-6 py-3 flex items-center gap-4">
+                  <button onClick={() => prevModule && navigateTo(prevModule.id)} disabled={!prevModule}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-card-foreground disabled:opacity-30 disabled:cursor-not-allowed rounded-lg hover:bg-muted transition-all">
+                    <ChevronLeft className="w-4 h-4" />Previous
+                  </button>
+                  <div className="flex-1 flex justify-center">
+                    {isCompleted ? (
+                      <div className="flex items-center gap-2 text-green-600 text-sm font-semibold">
+                        <CheckCircle2 className="w-4 h-4" />Module completed
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Complete the SCORM activity to mark this module done</p>
+                    )}
+                  </div>
+                  <button onClick={() => nextModule && navigateTo(nextModule.id)} disabled={!nextModule}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-card-foreground disabled:opacity-30 disabled:cursor-not-allowed rounded-lg hover:bg-muted transition-all">
+                    Next <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
             <div className="flex-1 overflow-y-auto relative bg-background text-foreground" onClick={() => selectionPopup && setSelectionPopup(null)}>
+              <CourseThemeProvider template={course.template}>
               <div className="max-w-2xl mx-auto px-6 py-8 space-y-10" ref={contentRef}>
 
                 {/* Personalized welcome card */}
@@ -800,7 +1239,7 @@ export function CourseViewer({
                     </button>
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-md shrink-0">
-                        <Bot className="w-5 h-5 text-white" />
+                        <img src="/sudar-chat-logo.png" className="w-5 h-5 object-contain brightness-0 invert" alt="Sudar" />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-card-foreground">Sudar knows you&apos;re here</p>
@@ -833,7 +1272,7 @@ export function CourseViewer({
                   </div>
                 )}
 
-                {/* Module content — text or flashcards */}
+                {/* Module content — text, rich, or flashcards */}
                 {activeModality === 'flashcards' ? (
                   <FlashcardsCard
                     cards={flashcardsByModule[currentModuleId] ?? []}
@@ -898,6 +1337,7 @@ export function CourseViewer({
                   </div>
                 )}
               </div>
+              </CourseThemeProvider>
             </div>
 
             {/* Bottom nav */}
@@ -920,18 +1360,21 @@ export function CourseViewer({
                 </div>
                 <button onClick={() => nextModule && navigateTo(nextModule.id)} disabled={!nextModule}
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-card-foreground disabled:opacity-30 disabled:cursor-not-allowed rounded-lg hover:bg-muted transition-all">
-                  Next<ChevronRight className="w-4 h-4" />
+                  {'Next '}
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             )}
+            </>
+            )} {/* end non-SCORM branch */}
           </div>
 
           {/* Sudar tutor panel */}
           {tutorOpen && (
-            <div className="w-80 border-l border-border bg-muted flex flex-col shrink-0">
+            <div className="w-96 border-l border-border bg-muted flex flex-col shrink-0">
               <div className="px-4 py-3 border-b border-border bg-background flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-sm shadow-md">
-                  <Bot className="w-4 h-4 text-white" />
+                  <img src="/sudar-chat-logo.png" className="w-4 h-4 object-contain brightness-0 invert" alt="Sudar" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-card-foreground">Sudar</p>
@@ -942,12 +1385,56 @@ export function CourseViewer({
                 </button>
               </div>
 
+              {/* What Sudar knows about you — collapsible */}
+              <div className="border-b border-border bg-background">
+                <button
+                  type="button"
+                  onClick={() => setContextPanelExpanded((e) => !e)}
+                  className="w-full px-4 py-2 flex items-center justify-between gap-2 text-left text-xs text-muted-foreground hover:text-card-foreground hover:bg-muted/50 transition-colors"
+                >
+                  <span className="font-medium">Your context</span>
+                  <ChevronDown className={cn('w-3.5 h-3.5 shrink-0 transition-transform', contextPanelExpanded && 'rotate-180')} />
+                </button>
+                {contextPanelExpanded && learnerContext && (
+                  <div className="px-4 pb-3 pt-0 space-y-2 text-xs text-muted-foreground">
+                    {(learnerContext.self_reported_background as string)?.trim() && (
+                      <p><span className="font-medium text-card-foreground">Background: </span>
+                        {(learnerContext.self_reported_background as string).slice(0, 120)}
+                        {(learnerContext.self_reported_background as string).length > 120 ? '…' : ''}
+                      </p>
+                    )}
+                    {(learnerContext.learning_goals as string)?.trim() && (
+                      <p><span className="font-medium text-card-foreground">Goals: </span>
+                        {(learnerContext.learning_goals as string).slice(0, 120)}
+                        {(learnerContext.learning_goals as string).length > 120 ? '…' : ''}
+                      </p>
+                    )}
+                    {(learnerContext.preferred_explanation_style as string)?.trim() && (
+                      <p><span className="font-medium text-card-foreground">Explanation style: </span>
+                        {String(learnerContext.preferred_explanation_style).replace(/-/g, ' ')}
+                      </p>
+                    )}
+                    {(learnerContext.preferred_response_length as string)?.trim() && (
+                      <p><span className="font-medium text-card-foreground">Response length: </span>
+                        {String(learnerContext.preferred_response_length)}
+                      </p>
+                    )}
+                    {!learnerContext.self_reported_background && !learnerContext.learning_goals && !learnerContext.preferred_explanation_style && !learnerContext.preferred_response_length && (
+                      <p className="italic">Nothing set yet. Use quick actions below or visit Sudar&apos;s Memory to add context.</p>
+                    )}
+                  </div>
+                )}
+                {contextPanelExpanded && !learnerContext && (
+                  <div className="px-4 pb-3 pt-0 text-xs text-muted-foreground italic">Loading…</div>
+                )}
+              </div>
+
               <div className="flex-1 overflow-y-auto p-3 space-y-3">
                 {messages.length === 0 && (
                   <div className="space-y-3 pt-2">
                     <div className="flex items-start gap-2">
                       <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
-                        <Bot className="w-3 h-3 text-white" />
+                        <img src="/sudar-chat-logo.png" className="w-3 h-3 object-contain brightness-0 invert" alt="Sudar" />
                       </div>
                       <div className="bg-card border border-border rounded-xl rounded-tl-sm px-3 py-2 text-xs text-card-foreground leading-relaxed">
                         {learnerName ? `Hi ${learnerName}! ` : 'Hi! '}I&apos;m Sudar. I know <span className="font-medium text-primary">{currentModule?.title}</span> and your full learning history. Ask me anything.
@@ -962,6 +1449,28 @@ export function CourseViewer({
                         </button>
                       ))}
                     </div>
+                    <div className="pl-8 pt-1">
+                      <p className="text-[10px] text-muted-foreground mb-1.5">Remember…</p>
+                      <div className="flex flex-wrap gap-1">
+                        {[
+                          { key: 'one_line', label: 'One-line answers' },
+                          { key: 'detailed', label: 'Detailed responses' },
+                          { key: 'reading', label: 'I prefer reading' },
+                          { key: 'listening', label: 'I prefer listening' },
+                          { key: 'no_video', label: "Didn't like this video" },
+                        ].map(({ key, label }) => (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => handleQuickAction(key)}
+                            disabled={thinking}
+                            className="px-2 py-1 bg-muted/80 hover:bg-primary/10 text-muted-foreground hover:text-primary text-[10px] rounded-md transition-colors disabled:opacity-50"
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -969,13 +1478,90 @@ export function CourseViewer({
                   <div key={i} className={cn('flex items-start gap-2', msg.role === 'user' ? 'flex-row-reverse' : '')}>
                     {msg.role === 'assistant' && (
                       <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
-                        <Bot className="w-3 h-3 text-white" />
+                        <img src="/sudar-chat-logo.png" className="w-3 h-3 object-contain brightness-0 invert" alt="Sudar" />
                       </div>
                     )}
-                    <div className={cn('max-w-[90%] px-3 py-2 rounded-xl text-xs leading-relaxed',
-                      msg.role === 'user' ? 'bg-primary text-white rounded-tr-sm' : 'bg-card border border-border text-card-foreground rounded-tl-sm'
+                    <div className={cn(
+                      'rounded-xl leading-relaxed',
+                      msg.role === 'user'
+                        ? 'max-w-[88%] px-3 py-2 text-xs bg-primary text-white rounded-tr-sm'
+                        // Assistant: wider, more padding, overflow for tables/rich content
+                        : 'w-full px-3 py-2.5 text-[0.75rem] bg-card border border-border text-card-foreground rounded-tl-sm overflow-x-auto'
                     )}>
-                      {msg.content}
+                      {msg.role === 'assistant' && msg.blocks?.length ? (
+                        <GenerativeBlockRenderer
+                          blocks={msg.blocks}
+                          onActionClick={(action) => {
+                            fetch('/api/tutor/outcome', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                course_id: action.course_id ?? undefined,
+                                path_id: action.path_id ?? undefined,
+                                action_label: action.label,
+                              }),
+                            }).catch(() => {})
+                          }}
+                        />
+                      ) : (
+                        <span className="contents block">
+                      {msg.role === 'assistant' ? (
+                        <ChatMarkdown text={msg.content} />
+                      ) : (
+                        <>
+                          {msg.content}
+                          {msg.referencedSelection && (
+                            <div className="mt-1 text-[10px] text-primary/80 flex items-center gap-1 opacity-90">
+                              <span>📎</span> Sudar used your selection as context
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {msg.role === 'assistant' && msg.confirmations && msg.confirmations.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {msg.confirmations.map((c) => (
+                            <button
+                              key={`${c.key}-${c.value}`}
+                              type="button"
+                              onClick={() => handleConfirmation(i, c.key, c.value)}
+                              className={cn(
+                                'px-2.5 py-1 rounded-lg text-xs font-medium transition-colors',
+                                c.value === 'cancel'
+                                  ? 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                  : 'bg-primary/20 text-primary hover:bg-primary/30'
+                              )}
+                            >
+                              {c.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {msg.role === 'assistant' && msg.actions && msg.actions.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {msg.actions.map((action, aIdx) => (
+                            <Link
+                              key={aIdx}
+                              href={action.href}
+                              onClick={() => {
+                                fetch('/api/tutor/outcome', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    course_id: action.course_id ?? undefined,
+                                    path_id: action.path_id ?? undefined,
+                                    action_label: action.label,
+                                  }),
+                                }).catch(() => {})
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+                            >
+                              {action.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -983,7 +1569,7 @@ export function CourseViewer({
                 {thinking && (
                   <div className="flex items-start gap-2">
                     <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0">
-                      <Bot className="w-3 h-3 text-white" />
+                      <img src="/sudar-chat-logo.png" className="w-3 h-3 object-contain brightness-0 invert" alt="Sudar" />
                     </div>
                     <div className="bg-card border border-border rounded-xl rounded-tl-sm px-3 py-2.5">
                       <div className="flex gap-1">
@@ -998,6 +1584,30 @@ export function CourseViewer({
               </div>
 
               <div className="p-3 border-t border-border bg-background">
+                {(messages.length > 0 || thinking) && (
+                  <div className="mb-2">
+                    <p className="text-[10px] text-muted-foreground mb-1">Remember…</p>
+                    <div className="flex flex-wrap gap-1">
+                      {[
+                        { key: 'one_line', label: 'One-line' },
+                        { key: 'detailed', label: 'Detailed' },
+                        { key: 'reading', label: 'Reading' },
+                        { key: 'listening', label: 'Listening' },
+                        { key: 'no_video', label: "No video" },
+                      ].map(({ key, label }) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => handleQuickAction(key)}
+                          disabled={thinking}
+                          className="px-2 py-1 bg-muted/80 hover:bg-primary/10 text-muted-foreground hover:text-primary text-[10px] rounded-md transition-colors disabled:opacity-50"
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-end gap-2">
                   <textarea
                     value={input}

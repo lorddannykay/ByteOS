@@ -1,7 +1,43 @@
 /**
- * ByteOS — Rich module content and modality variant types
+ * Sudar — Rich module content and modality variant types
  * Used by Learn for rendering; Studio uses the same shapes when writing content Json.
  */
+
+/** Lesson structural archetype (content variability engine). */
+export const LESSON_ARCHETYPES = [
+  'cold-open',
+  'socratic',
+  'misconception-trap',
+  'case-file',
+  'comparison-engine',
+] as const
+export type LessonArchetype = (typeof LESSON_ARCHETYPES)[number]
+
+/** Entry state types for lesson openers. */
+export const ENTRY_STATE_TYPES = ['provocation', 'data-drop', 'scenario-fragment', 'contrarian-claim'] as const
+export type EntryStateType = (typeof ENTRY_STATE_TYPES)[number]
+
+/** Exit state types for lesson closers. */
+export const EXIT_STATE_TYPES = ['reflection', 'apply-24h', 'next-conflict-teaser', 'what-changed'] as const
+export type ExitStateType = (typeof EXIT_STATE_TYPES)[number]
+
+export interface EntryState {
+  type: EntryStateType
+  content: string
+}
+
+export interface ExitState {
+  type: ExitStateType
+  content: string
+}
+
+/** Side note voice types for dynamic side cards. */
+export const SIDE_NOTE_TYPES = ['wait-but-why', 'real-world', 'brain-moment', 'expert-voice', 'rabbit-hole'] as const
+export type SideNoteType = (typeof SIDE_NOTE_TYPES)[number]
+
+/** Quiz mode for richer assessment variety. */
+export const QUIZ_MODES = ['standard', 'predict-then-learn', 'confidence-tagged', 'scenario-fork', 'peer-contrast'] as const
+export type QuizMode = (typeof QUIZ_MODES)[number]
 
 /** Legacy module content (unchanged) */
 export interface TextContent {
@@ -22,6 +58,8 @@ export interface RichContentSection {
 export interface RichInteractiveElement {
   type: 'quiz' | 'expandable' | 'code-demo' | 'diagram' | 'video' | 'audio' | 'flashcard' | 'timeline' | 'flipcard' | 'hotspot' | 'matching' | 'tabs'
   data: Record<string, unknown>
+  /** For quiz elements: standard | predict-then-learn | confidence-tagged | scenario-fork | peer-contrast */
+  quizMode?: QuizMode
 }
 
 /** Side card in rich content */
@@ -29,11 +67,17 @@ export interface RichSideCard {
   title: string
   content: string
   tips?: string[]
+  noteType?: SideNoteType
 }
 
 /** Rich module content (new) */
 export interface RichContent {
   type: 'rich'
+  archetype?: LessonArchetype
+  /** Replaces generic introduction when present. */
+  entryState?: EntryState
+  /** Replaces generic summary when present. */
+  exitState?: ExitState
   introduction?: string
   sections: RichContentSection[]
   summary?: string
@@ -41,8 +85,22 @@ export interface RichContent {
   sideCard?: RichSideCard
 }
 
-/** Module content: either legacy text or rich */
-export type ModuleContent = TextContent | RichContent
+/** SCORM 1.2 hosted module — rendered via iframe with API shim */
+export interface ScormContent {
+  type: 'scorm'
+  launch_url: string
+  package_base?: string
+  scorm_version?: '1.2' | '2004'
+  /** Extracted plain-text from the SCO HTML files — used as Sudar's knowledge base for this module */
+  scorm_text_content?: string
+}
+
+export function isScormContent(content: unknown): content is ScormContent {
+  return typeof content === 'object' && content !== null && (content as ScormContent).type === 'scorm'
+}
+
+/** Module content: either legacy text, rich, or SCORM iframe */
+export type ModuleContent = TextContent | RichContent | ScormContent
 
 /** Type guard for rich content */
 export function isRichContent(content: unknown): content is RichContent {

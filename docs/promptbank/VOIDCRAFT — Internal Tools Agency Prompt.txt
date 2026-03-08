@@ -1,0 +1,63 @@
+# Summary
+
+VOIDCRAFT is a premium tech-focused design system characterized by a dark hacker vibe, sharp-edged UI, and matrix-green terminal aesthetics. It emphasizes precision, speed, and engineering excellence through monospace typography and subtle cinematic effects like scanlines and text flickering.
+
+# Style
+
+Stealth tech aesthetic using JetBrains Mono (headings/UI) and Space Grotesk (body). Color palette centers on deep blacks, grays, and a signature matrix green. Includes scanline animations, CRT flicker, and pulsing glow effects.
+
+## Spec
+
+Create a 'Voidcraft' stealth tech interface. Background: Absolute black #040404 with a 60px grid overlay in rgba(0, 255, 65, 0.03) and a subtle SVG noise texture (3% opacity). Accent Color: #00ff41 (Matrix Green). Typography: Primary UI in 'JetBrains Mono' (weights 300-800), body text in 'Space Grotesk' (weights 300-500). Borders: 1px solid #1a1a1a with top-edge gradients from #00ff4130 to transparent. Visual Effects: Vertical scanline animation moving top-to-bottom every 8 seconds; flickering text effects on key headings; cursor blink '█' in green. Shadows: No soft shadows; use 'pulse-glow' (box-shadow: 0 0 15px #00ff4120) and hover-glow on cards. Corners: Strictly sharp (0px border-radius) except for very small status indicators.
+
+# Layout & Structure
+
+A rigid, grid-aligned vertical flow with full-width sections separated by technical borders and bracketed headers.
+
+## Navigation
+
+Fixed top bar, 16rem height, #040404 background, 1px bottom border #1a1a1a. Left: Hexagonal icon with 'VOIDCRAFT' logo in bold tracking. Right: Horizontal list of links in uppercase monospace text (size 12px), color #888888, hovering to #00ff41. Include a primary CTA button: solid #00ff41 background, black text, tracking-wider uppercase.
+
+## Hero Section
+
+Split layout. Left (8/12): Features a pulsing status indicator dot, 'Systems Operational' text, and massive headline (size 72px) in JetBrains Mono using white and matrix-green. Subtext in Space Grotesk, light weight. Primary CTA: Large green block button with arrow icon. Right (4/12): A terminal window mockup with #0a0a0a background, title bar with 3 dots, and green-tinted code output simulating a build process.
+
+## Metrics Bar
+
+Stuck to the bottom of the hero section. 4-column grid separated by 1px vertical lines. Each cell shows a large bold metric (e.g., 247+) where the suffix (+, %, d) is matrix-green. Below metric: uppercase label in 10px monospace.
+
+## Features Grid
+
+3-column grid with 1px gap background showing through as borders (#1a1a1a). Each card: #0a0a0a background, padding 32px. Top-left: Icon inside a square 1px box. Top-right: Index number like '_01'. Hover state: Card border turns matrix-green with a subtle outer glow and icon changes color. Bottom: List of technical tags in 10px monospace boxes.
+
+## Case Studies (Deployments)
+
+Full-width vertical stack of cards. Each card is a 12-column grid. Col 1-2: Metric sidebar with massive green percentage/number. Col 3-9: Title, subtitle, and body description. Col 10-12: Technical specs (Timeline, Stack, Status) with 1px left border and green status pulse dot. Background: #040404 with hover-glow effect.
+
+## Pricing Tiers
+
+3-column grid. Cards have absolute sharp corners. Featured middle card has a top green border, a 'RECOMMENDED' badge, and a pulse-glow animation. Each card includes a price in 36px bold, a list of features with '▸' bullet points in green, and a full-width block CTA button.
+
+## Footer
+
+5-column grid. Columns: Branding/Socials, Services, Company, Legal, System Status. System Status column includes a live heartbeat animation (green pulsing dot) and tech metrics (Uptime, Latency). Bottom row: copyright and a fake 'build version/sha' in code-style text.
+
+# Special Components
+
+## Interactive Terminal Emulator
+
+A functional-looking terminal window used to demonstrate tech capability.
+
+Container: Background #0a0a0a, border 1px #3a3a3a. Header: #131313 with three 10px circles and 'terminal — voidcraft' label. Content: 12px monospace text. Include '$ command' lines in #888888, '✓ success' lines in #00ff41, and a trailing blinking block cursor '█'. Implement typewriter animation on load for text lines.
+
+## Bracket-Accented Headers
+
+Unique section titles framed by monospace brackets.
+
+Target H2 tags. Use CSS ::before { content: '[ '; color: #00ff41; } and ::after { content: ' ]'; color: #00ff41; }. Font: JetBrains Mono, Size: 48px, Weight: Bold. Alignment: Usually paired with a '01' step indicator and a 1px horizontal line that fills remaining width.
+
+## Matrix Rain Background
+
+Decorative vertical falling characters.
+
+Floating absolute-positioned spans of '01010' or random chars. Color: #00ff4115 (very low opacity). Animation: TranslateY from -100% to 1000% over 6-10s with varied delays. Placement: Z-index 0, behind all content, restricted to viewport height.
